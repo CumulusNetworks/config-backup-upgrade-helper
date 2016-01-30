@@ -1,8 +1,8 @@
 #! /bin/bash
 tmp_d=$(mktemp -d)
-addedfilelist=""
-changedfilelist=""
-deletedfilelist=""
+addedfilelist="Files Added since initial install"
+changedfilelist="Files Changed since initial install"
+deletedfilelist="Files Deleted since initial install"
 
 echo Extracting install file to $tmp_d
 sh /var/lib/cumulus/installer/onie-installer extract $tmp_d
@@ -82,12 +82,9 @@ done < installlist.txt
 cd ..
 #rm -rf $tmp_d
 
-echo Files Added since initial install:
 printf $addedfilelist
 echo
-echo Files Changed since initial install:
 printf $changedfilelist
 echo
-echo Files Deleted since initial install:
 printf $deletedfilelist
 
