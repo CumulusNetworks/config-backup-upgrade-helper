@@ -37,7 +37,7 @@ while read localfileline ; do
   then
     # File is new, it doesn't exist in install archive
     echo "Local file is new since install: $localfilename"
-    addedfilelist="${addedfilelist}\n${localfilename}"
+    addedfilelist="${addedfilelist}\\n${localfilename}"
   fi
   installfile=$(echo $installfileline | awk '{print $6}' | sed -e 's/^\.//')
   #echo FILE: $localfile
@@ -48,7 +48,7 @@ while read localfileline ; do
   if [ "$localdate"! = "$installdate" ] || [ "$localsize" != "$installsize" ]
   then
     echo file: $installfile  localdate: $localdate installdate: $installdate localsize: $localsize installsize: $installsize
-    changedfilelist="${changedfilelist}\n${localfilename}" 
+    changedfilelist="${changedfilelist}\\n${localfilename}" 
   fi
 done < locallist.txt
 
@@ -62,7 +62,7 @@ while read installfileline ; do
   then
     # File was deleted, it doesn't exist on local system   
     echo "File was deleted since install: $installfile"
-    deletedfilelist="${deletedfilelist}\n${localfilename}" 
+    deletedfilelist="${deletedfilelist}\\n${localfilename}" 
   fi
 #  #echo FILE: $installfile
 #  installdate=$(echo $installfileline | awk '{print $4" " $5}')
