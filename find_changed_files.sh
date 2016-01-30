@@ -23,7 +23,7 @@ while read localfileline ; do
   #echo LLINE: $localfileline
   localdate=$(echo $localfileline2 | awk '{print $6" " $7}'  | awk -F '.' '{print $1}')
   localsize=$(echo $localfileline2 | awk '{print $5}')
-  localfilename=$(echo $localfilelinei2 | awk '{print $9}')
+  localfilename=$(echo $localfileline2 | awk '{print $9}')
 
   #echo ILINE: $localfileline
 
