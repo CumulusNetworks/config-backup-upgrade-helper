@@ -82,9 +82,9 @@ done < installlist.txt
 cd ..
 #rm -rf $tmp_d
 
-printf $addedfilelist
+printf "%b" "$addedfilelist"
 echo
-printf $changedfilelist
+printf "%b" "$changedfilelist"
 echo
-printf $deletedfilelist
+printf "%b" "$deletedfilelist"
 
