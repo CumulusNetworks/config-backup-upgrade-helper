@@ -18,12 +18,12 @@ find /etc /home /root -type f -exec ls -l {} \;  > locallist.txt
 # Find files that are not in install - adds
 ## check for files in /etc and /root and /home that don't exist in install image - files that have been added
 while read localfileline ; do
-  localfilename1=echo $localfileline | awk '{print $9}'
-  localfileline=$(ls -l --full-time $localfilename1)
+  localfilename1=$(echo $localfileline | awk '{print $9}')
+  localfileline2=$(ls -l --full-time $localfilename1)
   #echo LLINE: $localfileline
-  localdate=$(echo $localfileline | awk '{print $6" " $7}'  | awk -F '.' '{print $1}')
-  localsize=$(echo $localfileline | awk '{print $5}')
-  localfilename=$(echo $localfileline | awk '{print $9}')
+  localdate=$(echo $localfileline2 | awk '{print $6" " $7}'  | awk -F '.' '{print $1}')
+  localsize=$(echo $localfilelinei2 | awk '{print $5}')
+  localfilename=$(echo $localfilelinei2 | awk '{print $9}')
 
   #echo ILINE: $localfileline
 
