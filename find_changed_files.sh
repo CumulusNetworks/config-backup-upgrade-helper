@@ -1,8 +1,8 @@
+#! /bin/bash
 tmp_d=$(mktemp -d)
 addedfilelist=""
 changedfilelist=""
 deletedfilelist=""
-exit
 
 echo Extracting install file to $tmp_d
 sh /var/lib/cumulus/installer/onie-installer extract $tmp_d
