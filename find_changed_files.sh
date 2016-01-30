@@ -20,7 +20,7 @@ find /etc /home /root -type f -exec ls -l {} \;  > locallist.txt
 while read localfileline ; do
   localfileline=$(ls -l --full-time $installfile)
   #echo LLINE: $localfileline
-  localdate=$(echo $localfileline | awk '{print $6" " $7" " $8}'  | awk -F '.' '{print $1}')
+  localdate=$(echo $localfileline | awk '{print $6" " $7}'  | awk -F '.' '{print $1}')
   localsize=$(echo $localfileline | awk '{print $5}')
   localfilename=$(echo $localfileline | awk '{print $9}')
 
@@ -31,7 +31,7 @@ while read localfileline ; do
 ##-rw-r--r-- komodo-build/komodo-build 13685 2015-10-27 15:53:10 Komodo-Edit-9.3.0-16396-linux-x86_64/support/which.py
 ## But I have already created the file list above, so just need to grep for the filename with a leading space and hope it is unique:
   
-  installfileline=$(grep " $localfilename" installlist.txt)
+  installfileline=$(grep ".$localfilename" installlist.txt)
   if [ "$installfileline" = "" ]
   then
     # File is new, it doesn't exist in install archive
