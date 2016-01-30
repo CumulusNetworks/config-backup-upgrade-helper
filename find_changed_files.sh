@@ -80,11 +80,11 @@ while read installfileline ; do
 done < installlist.txt
 
 cd ..
-#rm -rf $tmp_d
+rm -rf $tmp_d
 
-printf "%b" "$addedfilelist"
+printf "\n%b\n" "$addedfilelist"
 echo
-printf "%b" "$changedfilelist"
+printf "\n%b\n" "$changedfilelist"
 echo
-printf "%b" "$deletedfilelist"
+printf "\n%b\n" "$deletedfilelist"
 
