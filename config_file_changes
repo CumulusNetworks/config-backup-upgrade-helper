@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+
+import subprocess
+import re
+from pprint import pprint 
+
+# setup variables - debug(store data in local files), string lists
+install_list_dct={}
+local_list_dct={}
+
+# Define whitelist filenames with comment data
+whitelist_tuple_list=[
+    ('/etc/network', 'All the config for the switch interfaces')
+]
+# Define blacklist filenames with commment data
+blacklist_tuple_list=[
+    ('/etc/cumulus/bcm.d', 'Per platform hardware config installed on first boot')
+]
+
+# Collect all the file data:
+# find and extract install file based on arch
+
+# run uname -a
+arch="x86"
+if arch == "x86":
+    installer_file='/var/lib/cumulus/installer/onie-installer'
+
+if arch == "ppc":
+    installer_file='unknown'
+
+if arch == 'arm':
+    installer_file=''
+    
+
+# untar sysroot partition file data and store
+#Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
+
+tmp_dir=subprocess.check_output(['mktemp',  '-d'])
+subprocess.call(['sh', installer_file, 'extract', tmp_dir])
+subprocess.call(['cd', tmp_dir])
+# Actual command line to get the list of files out of the tar:
+'''tar -t -v --exclude='bin' --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
+   --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
+'''
+
+install_list_raw=subprocess.check_output(['tar', '-t', '-v', '--exclude=bin', '--exclude=boot', '--exclude=usr',
+                                          '--exclude=sbin', '--exclude=dev', '--exclude=run', '--exclude=var',
+                                          '--exclude=lib', '--full-time', '-f', 'sysroot-release.tar.gz', '|',
+                                          'egrep', '-v', '--', '^d|->'])
+#Output sample:
+#-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
+install_list_pattern=re.compile(r"""(?P<permissions>[rwxsStT-]+)\s+(?P<owner>\w+)/(?P<group>\w+)\s+
+                               +(?P<size>\d+)\s+(?P<date>[0-9\-]+)\s+(?P<time>[0-9:]+)
+                               \s+\.(?P<filename>\S+)
+                                """, re.X)
+
+for install_line in install_list_raw:
+    match=install_list_pattern(install_line)
+    if match:
+        install_filename=match.group('filename')
+        install_datetime='{} {}'.format(match.group('date'), match.group('time'))
+        install_size=match.group('size')
+        install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
+    
+    else:
+        print('Error: Installed image filename, date, and size not parsed correctly from:')
+        print(install_line)
+        print('Decide what to do here... exit or continue')
+        
+pprint(install_list_dct)
+
+# find all files in /etc /home /root in locally installed files and store
+local_list_raw=subprocess.check_output(["find", '/etc', '/home', '/root', '-type', 'f', '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+#Output sample:
+#-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
+
+local_list_pattern=re.compile(r"""(?P<permissions>[rwxsStT-]+)\s+(?P<link_count>[0-9]+)\s+
+                              (?P<owner>\w+)\s+(?P<group>\w+)\s+(?P<size>\d+)\s+
+                              (?P<date>[0-9\-]+)\s+(?P<time>[0-9:]+)\.(?P<msec>[0-9]+)\s+
+                              (?P<timezone>[\+\-0-9]+)\s+(?P<filename>\S+)
+                              """, re.X)
+
+# Loop through all local files and determine adds, changes, deletes. 
+for local_line in local_list_raw:
+    match=local_list_pattern(local_line)
+    if match:
+        local_filename=match.group('filename')
+        local_datetime='{} {}'.format(match.group('date'), match.group('time'))
+        local_size=match.group('size')
+        local_list_dct[local_filename]={ 'size': local_size, 'datetime' : local_datetime }
+
+    else:
+        print('Error: Local filename, date, and size not parsed correctly from:')
+        print(local_line)
+        print('Decide what to do here... exit or continue')
+
+
+pprint(local_list_dct)
+
+#Remove tmp_dir here to save space in case of crash
+# comment line to debug
+subprocess.call('rm', tmp_dir)
+
+# Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
+
+# Loop through changes and compare to blacklist, whitelist
+
+# Loop through deletes and compare to blacklist, whitelist
+
+# output results to screen and a slotsync.conf file
+
