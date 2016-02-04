@@ -35,7 +35,7 @@ if arch == 'arm':
 # untar sysroot partition file data and store
 #Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
 
-tmp_dir=subprocess.check_output(['mktemp',  '-d'])
+tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
 subprocess.call(['sh', installer_file, 'extract', tmp_dir])
 subprocess.call(['cd', tmp_dir])
 # Actual command line to get the list of files out of the tar:
