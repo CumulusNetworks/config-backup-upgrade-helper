@@ -36,8 +36,11 @@ if arch == 'arm':
 #Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
 
 tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
+print('tmp_dir is {0}'.format(tmp_dir))
 subprocess.call(['sh', installer_file, 'extract', tmp_dir])
-subprocess.call(['cd', tmp_dir])
+# This doesn't work, but we may not care...
+#subprocess.call(['cd', tmp_dir])
+
 # Actual command line to get the list of files out of the tar:
 '''tar -t -v --exclude='bin' --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
    --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
