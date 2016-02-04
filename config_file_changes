@@ -49,7 +49,7 @@ subprocess.call(['sh', installer_file, 'extract', tmp_dir])
 install_list_raw=subprocess.check_output(['tar', '-t', '-v', '--exclude=bin', '--exclude=boot', '--exclude=usr',
                                           '--exclude=sbin', '--exclude=dev', '--exclude=run', '--exclude=var',
                                           '--exclude=lib', '--full-time', '-f', 'sysroot-release.tar.gz', '|',
-                                          'egrep', '-v', '--', '^d|->'])
+                                          'egrep', '-v', '--', '^d|->'], cwd=tmp_dir)
 #Output sample:
 #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
 install_list_pattern=re.compile(r"""(?P<permissions>[rwxsStT-]+)\s+(?P<owner>\w+)/(?P<group>\w+)\s+
