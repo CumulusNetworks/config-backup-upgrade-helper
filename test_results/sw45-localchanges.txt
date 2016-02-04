@@ -1,0 +1,72 @@
+
+Files Added since initial install
+/etc/modules	2015-12-07 21:10:14
+/etc/ssh/ssh_host_ecdsa_key	2016-01-19 22:42:59
+/etc/ssh/ssh_host_ecdsa_key.pub	2016-01-19 22:42:59
+/etc/ssh/ssh_host_rsa_key	2016-01-19 22:42:58
+/etc/ssh/ssh_host_rsa_key.pub	2016-01-19 22:42:58
+/etc/ssh/ssh_host_dsa_key	2016-01-19 22:42:59
+/etc/ssh/ssh_host_dsa_key.pub	2016-01-19 22:42:59
+/etc/default/hwclock	2015-12-07 21:10:14
+/etc/default/phy_ucode_update	2015-12-07 21:10:14
+/etc/watchdog.d/platform	2015-12-07 21:10:14
+/etc/sysctl.d/local.conf	2015-12-07 21:10:14
+/etc/sensors.d/dell_s4000_c2338.conf	2016-01-19 22:42:45
+/etc/cumulus/init/arch.conf	2016-01-19 22:39:13
+/etc/cumulus/ports.conf	2015-12-07 21:10:14
+/etc/cumulus/.license	2016-01-19 17:43:51
+/etc/cumulus/.license.txt	2016-01-19 17:43:51
+/etc/cumulus/acl/policy.d/20control_plane.rules	2016-01-26 16:14:43
+/etc/cumulus/acl/policy.d/test	2016-01-27 16:37:44
+/etc/cumulus/acl/policy.d/01-479v4-484v6	2016-01-27 15:56:33
+/etc/cumulus/acl/policy.d/20control_plane_edited	2016-01-26 16:21:42
+/etc/bcm.d/config.bcm	2016-01-20 01:48:26
+/etc/bcm.d/led0.hex	2016-01-20 01:48:24
+/etc/bcm.d/rc.phy	2016-01-20 01:48:24
+/etc/bcm.d/led0.asm	2016-01-20 01:48:24
+/etc/bcm.d/rc.ports_0	2016-01-20 01:48:24
+/etc/bcm.d/rc.soc	2015-12-07 21:10:14
+/etc/bcm.d/led1.asm	2016-01-20 01:48:24
+/etc/bcm.d/datapath/rc.forwarding	2016-01-20 01:48:24
+/etc/bcm.d/datapath/datapath.conf	2016-01-20 01:48:24
+/etc/bcm.d/datapath/hw_desc	2016-01-20 01:48:24
+/etc/bcm.d/backend_map	2015-12-07 21:10:14
+/etc/bcm.d/config.d/01config.bcm	2015-12-07 21:10:14
+/etc/bcm.d/config.d/10phy-ucode.bcm	2016-01-20 01:48:24
+/etc/bcm.d/config.d/03datapath.bcm	2016-01-20 01:48:26
+/etc/bcm.d/config.d/12portwd.bcm	2016-01-20 01:48:24
+/etc/bcm.d/config.d/11ports.bcm	2016-01-20 01:48:24
+/etc/bcm.d/config.d/02sdk.bcm	2016-01-20 01:48:24
+/etc/bcm.d/rc.led	2016-01-20 01:48:24
+/etc/bcm.d/led1.hex	2016-01-20 01:48:24
+/home/cumulus/localchanges.txt	2016-02-01 16:34:28
+/home/cumulus/find_changed_files.sh	2016-02-01 16:33:42
+/home/cumulus/.bash_history	2016-01-19 17:44:49
+/home/cumulus/.ansible/tmp/ansible-tmp-1454365034.15-66248687600118/command	2016-02-01 17:17:15
+/root/.alias	2016-01-19 17:43:51
+/root/.lesshst	2016-01-28 11:09:41
+/root/.bash_history	2016-02-01 13:57:41
+/root/.ssh/authorized_keys	2016-01-19 17:43:50
+/root/.ssh/known_hosts	2016-01-27 11:00:52
+/root/fpShowDefault	2016-01-27 12:56:59
+/root/fpShowDefault+479	2016-01-27 12:59:31
+/root/fp.show	2016-01-26 15:26:30
+/root/test.rules	2016-01-27 13:26:07
+/root/1.rules	2016-01-26 15:25:11
+
+Files Changed since initial install
+/etc/default/grub	2016-01-19 22:40:32
+/etc/shadow	2016-02-01 16:28:03
+/etc/fstab	2016-01-19 22:40:30
+/etc/blkid.tab.old	2016-01-19 22:40:42
+/etc/blkid.tab	2016-01-19 22:40:45
+/etc/shadow-	2016-01-19 17:38:41
+/etc/localtime	2016-01-19 17:43:52
+/etc/passwd-	2015-12-07 21:42:25
+/etc/resolv.conf	2016-02-01 13:40:44
+/etc/timezone	2016-01-19 17:43:52
+/etc/hosts	2016-02-01 13:40:44
+/root/.bashrc	2016-01-19 17:43:51
+/root/.profile	2016-01-19 17:43:51
+
+Files Deleted since initial install

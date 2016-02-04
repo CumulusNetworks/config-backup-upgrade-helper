@@ -1,0 +1,57 @@
+
+Files Added since initial install
+/etc/modules	2015-05-13 20:19:36
+/etc/sensors.d/cel_smallstone_xp.conf	2015-05-13 20:19:36
+/etc/bcm.d/config.d/10phy-ucode.bcm	2015-12-30 20:33:53
+/etc/bcm.d/config.d/02sdk.bcm	2015-12-30 20:33:53
+/etc/bcm.d/config.d/11ports.bcm	2015-12-30 20:33:53
+/etc/bcm.d/config.d/12portwd.bcm	2015-12-30 20:33:54
+/etc/bcm.d/config.d/01config.bcm	2015-05-13 20:19:36
+/etc/bcm.d/datapath/hw_desc	2015-12-30 20:33:54
+/etc/bcm.d/datapath/rc.forwarding	2015-12-30 20:33:54
+/etc/bcm.d/datapath/datapath.conf	2015-12-30 20:33:54
+/etc/bcm.d/rc.soc	2015-05-13 20:19:36
+/etc/bcm.d/config.bcm	2015-12-30 20:33:54
+/etc/bcm.d/led1.asm	2015-12-30 20:33:54
+/etc/bcm.d/rc.ports_0	2015-12-30 20:33:54
+/etc/bcm.d/backend_map	2015-05-13 20:19:36
+/etc/bcm.d/led0.hex	2015-12-30 20:33:54
+/etc/bcm.d/led0.asm	2015-12-30 20:33:54
+/etc/bcm.d/rc.led	2015-12-30 20:33:54
+/etc/bcm.d/rc.phy	2015-12-30 20:33:54
+/etc/bcm.d/led1.hex	2015-12-30 20:33:54
+/etc/sysctl.d/local.conf	2015-05-13 20:19:36
+/etc/default/phy_ucode_update	2015-05-13 20:19:36
+/etc/watchdog.d/platform	2015-05-13 20:19:36
+/etc/ssh/ssh_host_rsa_key	2015-06-26 16:44:10
+/etc/ssh/ssh_host_rsa_key.pub	2015-06-26 16:44:10
+/etc/ssh/ssh_host_dsa_key	2015-06-26 16:44:11
+/etc/ssh/ssh_host_ecdsa_key	2015-06-26 16:44:11
+/etc/ssh/ssh_host_ecdsa_key.pub	2015-06-26 16:44:11
+/etc/ssh/ssh_host_dsa_key.pub	2015-06-26 16:44:11
+/etc/cumulus/.license.txt	2015-03-24 18:13:27
+/etc/cumulus/ports.conf	2015-05-21 15:38:08
+/etc/cumulus/.license	2015-06-29 15:52:27
+/etc/cumulus/init/arch.conf	2015-06-26 14:49:56
+/home/cumulus/find_changed_files.sh	2016-02-01 21:33:35
+/home/cumulus/.ssh/known_hosts	2015-06-26 17:01:10
+/home/cumulus/localchanges.txt	2016-02-01 21:34:10
+/home/cumulus/.bash_history	2015-12-31 19:25:54
+/home/cumulus/.ansible/tmp/ansible-tmp-1454364975.15-263855126112692/command	2016-02-01 22:16:16
+/root/.lesshst	2015-12-31 00:00:09
+/root/.ssh/known_hosts	2015-06-26 17:01:30
+/root/linux-image_3.2.65-1+deb7u2+cl2.5+2_amd64.deb	2015-06-26 17:02:46
+/root/.bash_history	2016-01-12 14:57:06
+
+Files Changed since initial install
+/etc/blkid.tab	2015-06-26 17:10:34
+/etc/hosts	2016-02-01 18:51:05
+/etc/resolv.conf	2016-02-01 18:51:05
+/etc/default/grub	2015-06-26 14:50:40
+/etc/fstab	2015-06-26 14:50:39
+/etc/blkid.tab.old	2015-06-26 17:10:33
+/etc/network/interfaces	2015-06-26 19:19:02
+/etc/adjtime	2015-06-29 14:56:17
+/etc/shadow	2015-12-31 04:05:04
+
+Files Deleted since initial install

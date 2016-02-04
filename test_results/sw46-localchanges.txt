@@ -1,0 +1,73 @@
+
+Files Added since initial install
+/etc/watchdog.d/platform	2016-01-27 12:05:53
+/etc/sensors.d/dell_s4000_c2338.conf	2016-01-28 14:57:10
+/etc/modules	2016-01-27 12:05:53
+/etc/lvm/archive/CUMULUS_00003-1878049921.vg	2016-01-29 15:34:10
+/etc/lvm/archive/CUMULUS_00000-1351786548.vg	2016-01-29 14:00:16
+/etc/lvm/archive/CUMULUS_00002-2106347187.vg	2016-01-29 15:34:10
+/etc/lvm/archive/CUMULUS_00001-1881403483.vg	2016-01-29 14:00:16
+/etc/lvm/backup/CUMULUS	2016-01-29 15:34:10
+/etc/default/hwclock	2016-01-27 12:05:53
+/etc/default/phy_ucode_update	2016-01-27 12:05:53
+/etc/quagga/vtysh.conf.sav	2016-01-29 14:40:01
+/etc/quagga/Quagga.conf.sav	2016-01-29 14:40:01
+/etc/quagga/Quagga.conf	2016-01-29 15:31:00
+/etc/ssh/ssh_host_dsa_key.pub	2016-01-28 14:57:35
+/etc/ssh/ssh_host_rsa_key.pub	2016-01-28 14:57:33
+/etc/ssh/ssh_host_ecdsa_key	2016-01-28 14:57:35
+/etc/ssh/ssh_host_dsa_key	2016-01-28 14:57:35
+/etc/ssh/ssh_host_rsa_key	2016-01-28 14:57:33
+/etc/ssh/ssh_host_ecdsa_key.pub	2016-01-28 14:57:35
+/etc/sysctl.d/local.conf	2016-01-27 12:05:53
+/etc/cumulus/ports.conf	2016-01-27 12:05:53
+/etc/cumulus/.license.txt	2016-01-28 15:09:18
+/etc/cumulus/.license	2016-01-29 14:04:03
+/etc/cumulus/init/arch.conf	2016-01-28 14:53:33
+/etc/bcm.d/config.bcm	2016-01-29 15:31:57
+/etc/bcm.d/backend_map	2016-01-27 12:05:53
+/etc/bcm.d/rc.led	2016-01-29 15:31:54
+/etc/bcm.d/led1.hex	2016-01-29 15:31:54
+/etc/bcm.d/config.d/03datapath.bcm	2016-01-29 15:31:57
+/etc/bcm.d/config.d/02sdk.bcm	2016-01-29 15:31:54
+/etc/bcm.d/config.d/11ports.bcm	2016-01-29 15:31:54
+/etc/bcm.d/config.d/10phy-ucode.bcm	2016-01-29 15:31:54
+/etc/bcm.d/config.d/12portwd.bcm	2016-01-29 15:31:54
+/etc/bcm.d/config.d/01config.bcm	2016-01-27 12:05:53
+/etc/bcm.d/rc.phy	2016-01-29 15:31:54
+/etc/bcm.d/rc.ports_0	2016-01-29 15:31:54
+/etc/bcm.d/led0.asm	2016-01-29 15:31:54
+/etc/bcm.d/led0.hex	2016-01-29 15:31:54
+/etc/bcm.d/datapath/datapath.conf	2016-01-29 15:31:54
+/etc/bcm.d/datapath/hw_desc	2016-01-29 15:31:54
+/etc/bcm.d/datapath/rc.forwarding	2016-01-29 15:31:54
+/etc/bcm.d/led1.asm	2016-01-29 15:31:54
+/etc/bcm.d/rc.soc	2016-01-27 12:05:53
+/home/cumulus/localchanges.txt	2016-02-01 16:34:47
+/home/cumulus/.bash_history	2016-02-01 14:05:18
+/home/cumulus/find_changed_files.sh	2016-02-01 14:05:33
+/home/cumulus/.ansible/tmp/ansible-tmp-1454365041.47-258447142509745/command	2016-02-01 17:17:22
+/home/cumulus/.ssh/known_hosts	2016-01-28 15:00:58
+/root/.bash_history	2016-02-01 14:05:17
+/root/.ssh/authorized_keys	2016-01-29 15:33:18
+/root/.ssh/known_hosts	2016-01-28 15:01:34
+/root/.history_quagga	2016-01-29 15:29:28
+/root/.alias	2016-01-28 15:09:18
+
+Files Changed since initial install
+/etc/localtime	2016-01-28 15:09:19
+/etc/shadow	2016-02-01 14:05:13
+/etc/blkid.tab.old	2016-01-29 15:35:10
+/etc/default/grub	2016-01-28 14:54:56
+/etc/quagga/vtysh.conf	2016-01-29 14:48:19
+/etc/timezone	2016-01-28 15:09:19
+/etc/hosts	2016-02-01 14:35:19
+/etc/fstab	2016-01-28 14:54:52
+/etc/blkid.tab	2016-01-29 15:35:10
+/etc/resolv.conf	2016-02-01 14:35:19
+/etc/network/interfaces	2016-01-29 15:29:44
+/etc/adjtime	2016-01-29 15:31:21
+/root/.bashrc	2016-01-28 15:09:18
+/root/.profile	2016-01-28 15:09:18
+
+Files Deleted since initial install

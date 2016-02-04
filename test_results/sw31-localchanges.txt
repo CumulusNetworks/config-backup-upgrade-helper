@@ -1,0 +1,36 @@
+
+Files Added since initial install
+/etc/default/hwclock	2015-12-08 02:10:14
+/etc/default/phy_ucode_update	2015-12-08 02:10:14
+/etc/sensors.d/quanta_ly9_rangeley.conf	2015-12-08 02:10:14
+/etc/ssh/ssh_host_ecdsa_key.pub	2016-01-19 17:11:46
+/etc/ssh/ssh_host_ecdsa_key	2016-01-19 17:11:46
+/etc/ssh/ssh_host_dsa_key.pub	2016-01-19 17:11:46
+/etc/ssh/ssh_host_rsa_key	2016-01-19 17:11:45
+/etc/ssh/ssh_host_dsa_key	2016-01-19 17:11:46
+/etc/ssh/ssh_host_rsa_key.pub	2016-01-19 17:11:45
+/etc/modules	2015-12-08 02:10:14
+/etc/watchdog.d/platform	2015-12-08 02:10:14
+/etc/bcm.d/config.d/01config.bcm	2015-12-08 02:10:14
+/etc/bcm.d/backend_map	2015-12-08 02:10:14
+/etc/bcm.d/rc.soc	2015-12-08 02:10:14
+/etc/sysctl.d/local.conf	2015-12-08 02:10:14
+/etc/cumulus/init/arch.conf	2016-01-19 13:30:31
+/etc/cumulus/ports.conf	2015-12-08 02:10:14
+/home/cumulus/.bash_history	2016-01-20 20:24:35
+/home/cumulus/find_changed_files.sh	2016-02-01 21:37:40
+/home/cumulus/.ansible/tmp/ansible-tmp-1454364980.2-48696111766499/command	2016-02-01 22:16:21
+/root/.bash_history	2016-02-01 21:34:08
+
+Files Changed since initial install
+/etc/default/grub	2016-01-19 13:31:19
+/etc/hosts	2016-02-01 18:36:03
+/etc/fstab	2016-01-19 13:31:17
+/etc/shadow-	2016-01-20 20:24:31
+/etc/blkid.tab.old	2016-01-19 13:31:23
+/etc/passwd-	2015-12-08 02:42:25
+/etc/resolv.conf	2016-02-01 18:36:03
+/etc/shadow	2016-02-01 21:36:43
+/etc/blkid.tab	2016-01-19 13:31:25
+
+Files Deleted since initial install
