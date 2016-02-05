@@ -134,7 +134,7 @@ install_list_raw=subprocess.check_output(['tar', '-t', '-v',
                                           '--exclude=lib',
                                           '--full-time',
                                           '-f', 'sysroot-release.tar.gz'],
-                                          cwd=tmp_dir).
+                                          cwd=tmp_dir)
 #File sample:
 #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
 install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)
