@@ -80,14 +80,20 @@ def check_whitelist(file_dct):
     whitelist_dct={
         '/etc/apt': 'apt-get configuration file directory',
         '/etc/apt/sources.list.d': 'apt-get sources directory',
-        '/etc/network': 'All the config for the switch interfaces',
         '/etc/cumulus/.license' : 'Post 2.5.2 license file',
         '/etc/cumulus/.license.txt' : 'Pre-2.5.2 license file',
         '/etc/cumulus/ports.conf' : 'Front-panel interface definition',
         '/etc/cumulus/acl/policy.d': 'cl-acltool policies modified by user',
         '/etc/cumulus/ssmonitor.d': 'jdoo config files for daemon monitoring',
+        '/etc/hostname' : 'Hostname file.  May be set manually here or via DHCP',
+        '/etc/motd' : 'Message of the day',
+        '/etc/nsswitch.conf' : '',
+        '/etc/network': 'All the config for the switch interfaces',
+        '/etc/passwd' : 'Password file',
         '/etc/ptm.d': 'PTM daemon topology files',
         '/etc/quagga' : 'Quagga config files',
+        '/etc/resolv.conf': 'DNS Resolver config.  Only include if modified and not using DHCP on eth0',
+        '/etc/shadow' : 'Password',
         '/etc/ssh' : 'ssh config files',
         '/etc/sysctl.d' : 'sysctl control options',
         '/etc/slotsync.conf': 'upgrade tool config file to copy config files to alternate slot.  Use this tool to configure that file'
@@ -366,9 +372,9 @@ added_file_dct=check_whitelist(added_file_dct)
 
 # Loop through changes and compare to blacklist
 changed_file_dct=check_blacklist(changed_file_dct)
-# No reason to check changed files against whitelist,
-# since if they were changed and not blacklisted, they are important
-# changed_file_dct=check_whitelist(changed_file_dct)
+# The only reason to check changed files against whitelist is to mark them with comments.
+# if they were changed and not blacklisted, they are important
+changed_file_dct=check_whitelist(changed_file_dct)
 
 
 # Loop through deletes and compare to blacklist, whitelist
