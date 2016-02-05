@@ -243,7 +243,7 @@ for install_filename in install_list_dct:
 
 #Remove tmp_dir here to save space in case of crash
 # comment line to debug
-subprocess.call('rm', tmp_dir)
+subprocess.call(['rm', '-rf', tmp_dir])
 
 # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
 
