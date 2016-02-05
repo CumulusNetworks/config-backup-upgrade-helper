@@ -11,6 +11,7 @@ local_list_dct={}
 added_file_dct={}
 changed_file_dct={}
 deleted_file_dct={}
+tmp_dir=None
 
 # Define whitelist filenames with comment data
 # Define blacklist filenames with commment data
