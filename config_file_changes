@@ -134,7 +134,7 @@ install_list_raw=subprocess.check_output(['tar', '-t', '-v',
                                           '--exclude=lib',
                                           '--full-time',
                                           '-f', 'sysroot-release.tar.gz'],
-                                          cwd=tmp_dir)
+                                          cwd=tmp_dir).
 #File sample:
 #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
 install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)
@@ -155,7 +155,8 @@ install_link_pattern=re.compile('^l')
 install_dir_pattern=re.compile('^d')
 
 
-for install_line in install_list_raw:
+for install_line in install_list_raw.split('\n'):
+    print('Install line {}'.format(install_line))
     match=install_file_pattern.match(install_line)
     if match:
         install_filename=match.group('filename')
@@ -191,7 +192,7 @@ local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)\s+(?P<link_count>
                               ''', re.X)
 
 # Loop through all local files and determine adds, changes, deletes. 
-for local_line in local_list_raw:
+for local_line in local_list_raw.split('\n'):
     comment=None
     match=local_list_pattern(local_line)
     if match:
