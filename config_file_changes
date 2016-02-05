@@ -48,7 +48,7 @@ def check_blacklist(file_dct):
         #if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
             # file or its dir is not blacklisted, return the filename
         #    blacklisted_file_dct[filename]=''
-            #comment=blacklist_dct.get(filename,'None')
+            #comment=blacklist_dct.get(filename,None)
             #if not comment:
             #    comment=blacklist_dct.get(os.path.dirname(filename),'None')
         for blacklist_name in sorted(blacklist_dct):
@@ -98,9 +98,9 @@ def check_whitelist(file_dct):
         comment=None
         if (filename in whitelist_dct) or ( os.path.dirname(filename) in whitelist_dct ):
             # file or its dir is whitelisted, return a comment
-            comment=whitelist_dct.get(filename,'None')
+            comment=whitelist_dct.get(filename,None)
             if not comment:
-                comment=whitelist_dct.get(os.path.dirname(filename),'None')
+                comment=whitelist_dct.get(os.path.dirname(filename),None)
 
             whitelisted_file_dct[filename]=comment
         else:
@@ -142,7 +142,7 @@ if arch == "ppc":
                                 \s+(?P<time>[0-9:]+)
                                 \.(?P<msec>[0-9]+)
                                 \s+(?P<timezone>[\+\-0-9]+)
-                                \s+(?P<filename>\S+)
+                                \s+
                                 '''+'/mnt/root\-ro/(?P<filename>\S+)', re.X)
     
     
