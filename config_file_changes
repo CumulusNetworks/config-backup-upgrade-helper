@@ -136,11 +136,12 @@ local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
 # find and extract install file based on arch
 
 # run uname -a
-arch=subprocess.check_output(['uname', '-m'])
+arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
 
 if arch == "ppc":
     # Get active slot
     #active => slot 2 (alt    ): 2.5.2-727a0c6-201504132128-build
+    # or
     #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
 
     
@@ -272,7 +273,12 @@ if arch == "x86_64":
     pprint(install_list_dct)
     
     # find all files in /etc /home /root in locally installed files and store
-    local_list_raw=subprocess.check_output(["find", '/etc', '/home', '/root', '-type', 'f', '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+    local_list_raw=subprocess.check_output(['find',
+                                            '/etc',
+                                            '/home',
+                                            '/root',
+                                            '-type', 'f',
+                                            '-exec', 'ls', '-l', '--full-time', '{}', ';'])
     #Output sample:
     #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
     
