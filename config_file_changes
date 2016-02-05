@@ -282,12 +282,12 @@ changed_file_dct=check_blacklist(changed_file_dct)
 print('Files Added since initial install:')
 #pprint(added_file_dct)
 for filename in added_file_dct:
-    print('{0}\t:\t{1}'.format(filename, added_file_dct[filename]))
+    print('{0:<30}: {1}'.format(filename, added_file_dct[filename]))
 
 print('Files Changed since initial install:')
 for filename in changed_file_dct:
-    print('{0}\t:\t{1}'.format(filename, changed_file_dct[filename]))
+    print('{0:<30}: {1}'.format(filename, changed_file_dct[filename]))
 print('Files Deleted since initial install:')
 for filename in deleted_file_dct:
-    print('{0}\t:\t{1}'.format(filename, deleted_file_dct[filename]))
+    print('{0:<30}: {1}'.format(filename, deleted_file_dct[filename]))
 
