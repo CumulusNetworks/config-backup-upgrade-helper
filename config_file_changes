@@ -42,13 +42,13 @@ def check_blacklist(file_dct):
         
     for filename in file_dct:
         comment=None
-        if (filename in blacklist_dct) or ( os.path.dirname(filename) in blacklist_dct ):
-            # file or its dir is blacklisted, return a comment
-            comment=blacklist_dct.get(filename,'None')
-            if not comment:
-                comment=blacklist_dct.get(os.path.dirname(filename),'None')
+        if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
+            # file or its dir is not blacklisted, return the filename
+            blacklisted_file_dct[filename]=''
+            #comment=blacklist_dct.get(filename,'None')
+            #if not comment:
+            #    comment=blacklist_dct.get(os.path.dirname(filename),'None')
 
-            blacklisted_file_dct[filename]=comment
     
     return blacklisted_file_dct    
 
