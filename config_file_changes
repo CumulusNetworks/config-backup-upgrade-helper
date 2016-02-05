@@ -154,6 +154,8 @@ install_link_pattern=re.compile('^l')
 #drwxr-xr-x 0/0               0 2015-02-22 11:38:03 ./etc/ld.so.conf.d/
 install_dir_pattern=re.compile('^d')
 
+#blank line
+install_blank_pattern=re.compile('^\s+$')
 
 for install_line in install_list_raw.split('\n'):
     print('Install line {}'.format(install_line))
@@ -174,6 +176,10 @@ for install_line in install_list_raw.split('\n'):
     if match:
         continue
         
+    match=install_blank_pattern.match(install_line)
+    if match:
+        continue
+
     print('Error: Installed image filename, date, and size not parsed correctly from:')
     print(install_line)
     print('Decide what to do here... exit or continue')
