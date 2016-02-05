@@ -72,6 +72,9 @@ def check_whitelist(file_dct):
     # Unlike the Blacklist, the Whitelist must match all the way to the last directory name
     # or the exact file name.
 
+    # For more detailed information refer to this User Guide document:
+    #https://docs.cumulusnetworks.com/display/DOCS/Troubleshooting+the+etc+Directory
+
     # White list directories should not contain a trailing slash
     whitelist_dct={
         '/etc/apt': 'apt-get configuration file directory',
@@ -79,9 +82,13 @@ def check_whitelist(file_dct):
         '/etc/network': 'All the config for the switch interfaces',
         '/etc/cumulus/.license' : 'Post 2.5.2 license file',
         '/etc/cumulus/.license.txt' : 'Pre-2.5.2 license file',
+        '/etc/cumulus/ports.conf' : 'Front-panel interface definition',
         '/etc/cumulus/acl/policy.d': 'cl-acltool policies modified by user',
         '/etc/cumulus/ssmonitor.d': 'jdoo config files for daemon monitoring',
         '/etc/ptm.d': 'PTM daemon topology files',
+        '/etc/quagga' : 'Quagga config files',
+        '/etc/ssh' : 'ssh config files',
+        '/etc/sysctl.d' : 'sysctl control options',
         '/etc/slotsync.conf': 'upgrade tool config file to copy config files to alternate slot.  Use this tool to configure that file'
     }
 
@@ -111,102 +118,6 @@ def files_to_determine():
     '''
     
 
-# Collect all the file data:
-# find and extract install file based on arch
-
-# run uname -a
-arch="x86"
-if arch == "x86":
-    installer_file='/var/lib/cumulus/installer/onie-installer'
-
-if arch == "ppc":
-    installer_file='unknown'
-
-if arch == 'arm':
-    installer_file=''
-    
-
-# untar sysroot partition file data and store
-#Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
-
-tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
-print('tmp_dir is {0}'.format(tmp_dir))
-subprocess.call(['sh', installer_file, 'extract', tmp_dir])
-# This doesn't work, but we may not care...
-#subprocess.call(['cd', tmp_dir])
-
-# Actual command line to get the list of files out of the tar:
-'''tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
-   --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
-'''
-
-install_list_raw=subprocess.check_output(['tar', '-t', '-v',
-                                          '--exclude=bin',
-                                          '--exclude=boot',
-                                          '--exclude=usr',
-                                          '--exclude=sbin',
-                                          '--exclude=dev',
-                                          '--exclude=run',
-                                          '--exclude=var',
-                                          '--exclude=lib',
-                                          '--full-time',
-                                          '-f', 'sysroot-release.tar.gz'],
-                                          cwd=tmp_dir)
-#File sample:
-#-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
-install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)
-                                \s+(?P<owner>\w+)
-                                /(?P<group>\w+)
-                                \s+(?P<size>\d+)
-                                \s+(?P<date>[0-9\-]+)
-                                \s+(?P<time>[0-9:]+)
-                                \s+\.(?P<filename>\S+)
-                                ''', re.X)
-
-# link sample
-#lrwxrwxrwx 0/0               0 2015-12-08 02:12:16 ./etc/alternatives/rlogin.1.gz -> /usr/share/man/man1/slogin.1.gz
-install_link_pattern=re.compile('^l')
-
-#directory sample
-#drwxr-xr-x 0/0               0 2015-02-22 11:38:03 ./etc/ld.so.conf.d/
-install_dir_pattern=re.compile('^d')
-
-#blank line
-install_blank_pattern=re.compile('^\s+$')
-
-for install_line in install_list_raw.split('\n'):
-    print('Install line {}'.format(install_line))
-    match=install_file_pattern.match(install_line)
-    if match:
-        install_filename=match.group('filename')
-        install_datetime='{} {}'.format(match.group('date'), match.group('time'))
-        install_size=match.group('size')
-        install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
-        continue    
-    
-    match=install_link_pattern.match(install_line)
-    if match:
-        # This is a link.  Put in a separate list to check later
-        continue
-    
-    match=install_dir_pattern.match(install_line)
-    if match:
-        continue
-        
-    match=install_blank_pattern.match(install_line)
-    if match:
-        continue
-
-    print('Error: Installed image filename, date, and size not parsed correctly from:')
-    print(install_line)
-    print('Decide what to do here... exit or continue')
-        
-pprint(install_list_dct)
-
-# find all files in /etc /home /root in locally installed files and store
-local_list_raw=subprocess.check_output(["find", '/etc', '/home', '/root', '-type', 'f', '-exec', 'ls', '-l', '--full-time', '{}', ';'])
-#Output sample:
-#-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
 
 local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                               \s+(?P<link_count>[0-9]+)
@@ -219,7 +130,156 @@ local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                               \s+(?P<timezone>[\+\-0-9]+)
                               \s+(?P<filename>\S+)
                               ''', re.X)
+ 
 
+# Collect all the file data:
+# find and extract install file based on arch
+
+# run uname -a
+arch=subprocess.check_output(['uname', '-m'])
+
+if arch == "ppc":
+    # Get active slot
+    #active => slot 2 (alt    ): 2.5.2-727a0c6-201504132128-build
+    #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
+
+    
+    slot_pattern=re.compile('active => slot ((?P<slot>[12])')
+    cl_img_select=subprocess.check_output('cl-img-select')
+    match=slot_pattern.match(cl-img-select)
+    if match:
+        slot='config{}'.format(match.group('slot'))
+        # find all files in /etc /home /root in locally installed files and store
+        local_list_raw=subprocess.check_output(['find',
+                                                '/mnt/root-rw/{0}/etc'.format(slot),
+                                                '/mnt/root-rw/{0}/home'.format(slot),
+                                                '/mnt/root-rw/{0}/root'.format(slot),
+                                                '-type', 'f',
+                                                '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+        
+        install_list_raw=subprocess.check_output(['find',
+                                                '/mnt/root-ro/etc',
+                                                '/mnt/root-ro/home',
+                                                '/mnt/root-ro/root',
+                                                '-type', 'f',
+                                                '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+        
+        
+        #Output sample:
+        #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
+        
+        
+        for install_line in install_list_raw.split('\n'):
+            match=local_list_pattern.match(install_line)
+            if match:
+                install_filename=match.group('filename')
+                install_datetime='{} {}'.format(match.group('date'), match.group('time'))
+                install_size=match.group('size')
+                install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
+ 
+    else:
+        print('Error: Could not match active slot in cl-img-select')
+        exit()
+    # End if arch=ppc
+    
+    
+if arch == 'arm':
+    #TBD
+    pass
+
+
+if arch == "x86_64":
+    installer_file='/var/lib/cumulus/installer/onie-installer'
+
+    #Setup Regex's to parse the tar output
+    #File sample:
+    #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
+    install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)
+                                    \s+(?P<owner>\w+)
+                                    /(?P<group>\w+)
+                                    \s+(?P<size>\d+)
+                                    \s+(?P<date>[0-9\-]+)
+                                    \s+(?P<time>[0-9:]+)
+                                    \s+\.(?P<filename>\S+)
+                                    ''', re.X)
+    
+    # link sample
+    #lrwxrwxrwx 0/0               0 2015-12-08 02:12:16 ./etc/alternatives/rlogin.1.gz -> /usr/share/man/man1/slogin.1.gz
+    install_link_pattern=re.compile('^l')
+    
+    #directory sample
+    #drwxr-xr-x 0/0               0 2015-02-22 11:38:03 ./etc/ld.so.conf.d/
+    install_dir_pattern=re.compile('^d')
+    
+    #blank line
+    install_blank_pattern=re.compile('^\s+$')
+ 
+ 
+    # untar sysroot partition file data and store
+    #Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
+    
+    tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
+    print('tmp_dir is {0}'.format(tmp_dir))
+    subprocess.call(['sh', installer_file, 'extract', tmp_dir])
+    # This doesn't work, but we may not care...
+    #subprocess.call(['cd', tmp_dir])
+    
+    # Actual command line to get the list of files out of the tar:
+    '''tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
+       --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
+    '''
+    
+    install_list_raw=subprocess.check_output(['tar', '-t', '-v',
+                                              '--exclude=bin',
+                                              '--exclude=boot',
+                                              '--exclude=usr',
+                                              '--exclude=sbin',
+                                              '--exclude=dev',
+                                              '--exclude=run',
+                                              '--exclude=var',
+                                              '--exclude=lib',
+                                              '--full-time',
+                                              '-f', 'sysroot-release.tar.gz'],
+                                              cwd=tmp_dir)
+    
+    for install_line in install_list_raw.split('\n'):
+        print('Install line {}'.format(install_line))
+        match=install_file_pattern.match(install_line)
+        if match:
+            install_filename=match.group('filename')
+            install_datetime='{} {}'.format(match.group('date'), match.group('time'))
+            install_size=match.group('size')
+            install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
+            continue    
+        
+        match=install_link_pattern.match(install_line)
+        if match:
+            # This is a link.  Put in a separate list to check later
+            continue
+        
+        match=install_dir_pattern.match(install_line)
+        if match:
+            continue
+            
+        match=install_blank_pattern.match(install_line)
+        if match:
+            continue
+    
+        print('Error: Installed image filename, date, and size not parsed correctly from:')
+        print(install_line)
+        print('Decide what to do here... exit or continue')
+            
+    pprint(install_list_dct)
+    
+    # find all files in /etc /home /root in locally installed files and store
+    local_list_raw=subprocess.check_output(["find", '/etc', '/home', '/root', '-type', 'f', '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+    #Output sample:
+    #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
+    
+    # End if arch=x86
+
+
+ 
 # Loop through all local files and determine adds, changes, deletes. 
 for local_line in local_list_raw.split('\n'):
     comment=None
@@ -257,18 +317,19 @@ for install_filename in sorted(install_list_dct):
     if install_filename not in local_list_dct:
         deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
 
-
+    
 #Remove tmp_dir here to save space in case of crash
 # comment line to debug
-subprocess.call(['rm', '-rf', tmp_dir])
+if tmp_dir:
+    subprocess.call(['rm', '-rf', tmp_dir])
+
+# End if arch=x86
 
 # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
-
-# Loop through changes and compare to blacklist, whitelist
-
 added_file_dct=check_blacklist(added_file_dct)
 added_file_dct=check_whitelist(added_file_dct)
 
+# Loop through changes and compare to blacklist
 changed_file_dct=check_blacklist(changed_file_dct)
 # No reason to check changed files against whitelist,
 # since if they were changed and not blacklisted, they are important
