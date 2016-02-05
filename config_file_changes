@@ -191,16 +191,22 @@ local_list_raw=subprocess.check_output(["find", '/etc', '/home', '/root', '-type
 #Output sample:
 #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
 
-local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)\s+(?P<link_count>[0-9]+)\s+
-                              (?P<owner>\w+)\s+(?P<group>\w+)\s+(?P<size>\d+)\s+
-                              (?P<date>[0-9\-]+)\s+(?P<time>[0-9:]+)\.(?P<msec>[0-9]+)\s+
-                              (?P<timezone>[\+\-0-9]+)\s+(?P<filename>\S+)
+local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                              \s+(?P<link_count>[0-9]+)
+                              \s+(?P<owner>\w+)
+                              \s+(?P<group>\w+)
+                              \s+(?P<size>\d+)
+                              \s+(?P<date>[0-9\-]+)
+                              \s+(?P<time>[0-9:]+)
+                              \.(?P<msec>[0-9]+)
+                              \s+(?P<timezone>[\+\-0-9]+)
+                              \s+(?P<filename>\S+)
                               ''', re.X)
 
 # Loop through all local files and determine adds, changes, deletes. 
 for local_line in local_list_raw.split('\n'):
     comment=None
-    match=local_list_pattern(local_line)
+    match=local_list_pattern.match(local_line)
     if match:
         local_filename=match.group('filename')
         local_datetime='{} {}'.format(match.group('date'), match.group('time'))
