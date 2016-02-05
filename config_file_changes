@@ -43,7 +43,7 @@ def check_blacklist(file_dct):
     }
     blacklisted_file_dct={}
         
-    for filename in file_dct:
+    for filename in sorted(file_dct):
         please_blacklist=None
         #if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
             # file or its dir is not blacklisted, return the filename
@@ -51,7 +51,7 @@ def check_blacklist(file_dct):
             #comment=blacklist_dct.get(filename,'None')
             #if not comment:
             #    comment=blacklist_dct.get(os.path.dirname(filename),'None')
-        for blacklist_name in blacklist_dct:
+        for blacklist_name in sorted(blacklist_dct):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
             print('searching: {0}  in {1}'.format(blacklist_name, filename))
@@ -253,7 +253,7 @@ print('Temp changed file list:')
 pprint(changed_file_dct)
 
 # Loop through installed files and flag any files that have been deleted
-for install_filename in install_list_dct:
+for install_filename in sorted(install_list_dct):
     if install_filename not in local_list_dct:
         deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
 
@@ -280,14 +280,14 @@ changed_file_dct=check_blacklist(changed_file_dct)
 
 # output results to screen and a slotsync.conf file
 print('Files Added since initial install:')
-#pprint(added_file_dct)
-for filename in added_file_dct:
-    print('{0:<30}: {1}'.format(filename, added_file_dct[filename]))
+for filename in sorted(added_file_dct):
+    print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
 
 print('Files Changed since initial install:')
-for filename in changed_file_dct:
-    print('{0:<30}: {1}'.format(filename, changed_file_dct[filename]))
+for filename in sorted(changed_file_dct):
+    print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
+    
 print('Files Deleted since initial install:')
-for filename in deleted_file_dct:
-    print('{0:<30}: {1}'.format(filename, deleted_file_dct[filename]))
+for filename in sorted(deleted_file_dct):
+    print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
