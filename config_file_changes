@@ -41,7 +41,7 @@ def check_blacklist(file_dct):
     blacklisted_file_dct={}
         
     for filename in file_dct:
-        #comment=None
+        please_blacklist=None
         #if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
             # file or its dir is not blacklisted, return the filename
         #    blacklisted_file_dct[filename]=''
@@ -54,9 +54,11 @@ def check_blacklist(file_dct):
             print('searching: {0}  in {1}'.format(blacklist_name, filename))
             if ( re.search( blacklist_name, filename)):
                 print('{0]} Matches'.format(blacklist_name))
+                please_blacklist=True  
                 break
             
-        blacklisted_file_dct[filename]=''
+        if not please_blacklist:
+            blacklisted_file_dct[filename]=''
 
     return blacklisted_file_dct    
 
