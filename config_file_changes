@@ -123,14 +123,27 @@ subprocess.call(['sh', installer_file, 'extract', tmp_dir])
    --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
 '''
 
-install_list_raw=subprocess.check_output(['tar', '-t', '-v', '--exclude=bin', '--exclude=boot', '--exclude=usr',
-                                          '--exclude=sbin', '--exclude=dev', '--exclude=run', '--exclude=var',
-                                          '--exclude=lib', '--full-time', '-f', 'sysroot-release.tar.gz'], cwd=tmp_dir)
+install_list_raw=subprocess.check_output(['tar', '-t', '-v',
+                                          '--exclude=bin',
+                                          '--exclude=boot',
+                                          '--exclude=usr',
+                                          '--exclude=sbin',
+                                          '--exclude=dev',
+                                          '--exclude=run',
+                                          '--exclude=var',
+                                          '--exclude=lib',
+                                          '--full-time',
+                                          '-f', 'sysroot-release.tar.gz'],
+                                          cwd=tmp_dir)
 #File sample:
 #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
-install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)\s+(?P<owner>\w+)/(?P<group>\w+)\s+
-                               +(?P<size>\d+)\s+(?P<date>[0-9\-]+)\s+(?P<time>[0-9:]+)
-                               \s+\.(?P<filename>\S+)
+install_file_pattern=re.compile(r'''(?P<permissions>\-[rwxsStT-]+)
+                                \s+(?P<owner>\w+)
+                                /(?P<group>\w+)
+                                \s+(?P<size>\d+)
+                                \s+(?P<date>[0-9\-]+)
+                                \s+(?P<time>[0-9:]+)
+                                \s+\.(?P<filename>\S+)
                                 ''', re.X)
 
 # link sample
