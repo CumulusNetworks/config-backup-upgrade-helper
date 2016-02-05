@@ -119,17 +119,6 @@ def files_to_determine():
     
 
 
-local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
-                              \s+(?P<link_count>[0-9]+)
-                              \s+(?P<owner>\w+)
-                              \s+(?P<group>\w+)
-                              \s+(?P<size>\d+)
-                              \s+(?P<date>[0-9\-]+)
-                              \s+(?P<time>[0-9:]+)
-                              \.(?P<msec>[0-9]+)
-                              \s+(?P<timezone>[\+\-0-9]+)
-                              \s+(?P<filename>\S+)
-                              ''', re.X)
  
 
 # Collect all the file data:
@@ -144,10 +133,22 @@ if arch == "ppc":
     # or
     #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
 
+    install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                \s+(?P<link_count>[0-9]+)
+                                \s+(?P<owner>\w+)
+                                \s+(?P<group>\w+)
+                                \s+(?P<size>\d+)
+                                \s+(?P<date>[0-9\-]+)
+                                \s+(?P<time>[0-9:]+)
+                                \.(?P<msec>[0-9]+)
+                                \s+(?P<timezone>[\+\-0-9]+)
+                                \s+(?P<filename>\S+)
+                                '''+'/mnt/root\-ro/(?P<filename>\S+)', re.X)
     
-    slot_pattern=re.compile('active => slot ((?P<slot>[12])')
+    
+    slot_pattern=re.compile('active\s+\=\>\s+slot\s+(?P<slot>[12]+)')
     cl_img_select=subprocess.check_output('cl-img-select')
-    match=slot_pattern.match(cl-img-select)
+    match=slot_pattern.search(cl_img_select)
     if match:
         slot='config{}'.format(match.group('slot'))
         # find all files in /etc /home /root in locally installed files and store
@@ -171,7 +172,7 @@ if arch == "ppc":
         
         
         for install_line in install_list_raw.split('\n'):
-            match=local_list_pattern.match(install_line)
+            match=install_list_pattern.match(install_line)
             if match:
                 install_filename=match.group('filename')
                 install_datetime='{} {}'.format(match.group('date'), match.group('time'))
@@ -181,6 +182,21 @@ if arch == "ppc":
     else:
         print('Error: Could not match active slot in cl-img-select')
         exit()
+        
+        
+    local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                \s+(?P<link_count>[0-9]+)
+                                \s+(?P<owner>\w+)
+                                \s+(?P<group>\w+)
+                                \s+(?P<size>\d+)
+                                \s+(?P<date>[0-9\-]+)
+                                \s+(?P<time>[0-9:]+)
+                                \.(?P<msec>[0-9]+)
+                                \s+(?P<timezone>[\+\-0-9]+)
+                                \s+
+                                '''+'/mnt/root\-rw/'+slot+'(?P<filename>\S+)', re.X)
+
+        
     # End if arch=ppc
     
     
@@ -191,6 +207,18 @@ if arch == 'arm':
 
 if arch == "x86_64":
     installer_file='/var/lib/cumulus/installer/onie-installer'
+
+    local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                  \s+(?P<link_count>[0-9]+)
+                                  \s+(?P<owner>\w+)
+                                  \s+(?P<group>\w+)
+                                  \s+(?P<size>\d+)
+                                  \s+(?P<date>[0-9\-]+)
+                                  \s+(?P<time>[0-9:]+)
+                                  \.(?P<msec>[0-9]+)
+                                  \s+(?P<timezone>[\+\-0-9]+)
+                                  \s+(?P<filename>\S+)
+                                  ''', re.X)
 
     #Setup Regex's to parse the tar output
     #File sample:
