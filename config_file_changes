@@ -2,20 +2,97 @@
 
 import subprocess
 import re
+import os
 from pprint import pprint 
 
 # setup variables - debug(store data in local files), string lists
 install_list_dct={}
 local_list_dct={}
+added_file_dct={}
+changed_file_dct={}
+deleted_file_dct={}
 
 # Define whitelist filenames with comment data
-whitelist_tuple_list=[
-    ('/etc/network', 'All the config for the switch interfaces')
-]
 # Define blacklist filenames with commment data
-blacklist_tuple_list=[
-    ('/etc/cumulus/bcm.d', 'Per platform hardware config installed on first boot')
-]
+
+def check_blacklist(file_dct):
+    # For more detailed information refer to this User Guide document:
+    #https://docs.cumulusnetworks.com/display/DOCS/Troubleshooting+the+etc+Directory
+    
+    # Black list directory names should not contain a trailing slash
+    blacklist_dct={
+        '/etc/adjtime': 'System clock adjustment data - let ntp manage, in case switch hardware is replaced',
+        '/etc/bcm.d': 'Per platform hardware config dir, created on first boot.  Do not copy',
+        '/etc/blkid.tab': 'Partition table - should not be modified manually',
+        '/etc/blkid.tab.old': 'a previous partition table - should not be modified manually',
+        '/etc/cumulus/init': 'Platform hardware specific files.  Do not copy',
+        '/etc/default/clagd': 'Created and managed by ifupdown2. Do not copy',
+        '/etc/default/grub': 'Grub init table should not be modified manually',
+        '/etc/default/hwclock': 'Platform hardware specific file.  Created during first boot. Do not copy',
+        '/etc/default/hwclock.ucf-dist': 'Old merge conflict file, see RN-301 in 2.5.3',
+        '/etc/default/phy_ucode_update': 'Created during first boot.  Do not copy',
+        '/etc/init': 'Platform initialization files. Do not copy',
+        '/etc/init.d': 'Platform initialization files.  Do not copy',
+        '/etc/lvm/archive': 'Filesystem files.  Do not copy',
+        '/etc/lvm/backup': 'Filesystem files. Do not copy',
+        '/etc/modules': 'Created during first boot.  Do not copy',
+        '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy'
+    }
+    blacklisted_file_dct={}
+        
+    for filename in file_dct:
+        comment=None
+        if (filename in blacklist_dct) or ( os.path.dirname(filename) in blacklist_dct ):
+            # file or its dir is blacklisted, return a comment
+            comment=blacklist_dct.get(filename,'None')
+            if not comment:
+                comment=blacklist_dct.get(os.path.dirname(filename),'None')
+
+            blacklisted_file_dct[filename]=comment
+    
+    return blacklisted_file_dct    
+
+
+
+def check_whitelist(file_dct):
+    # White list directories should not contain a trailing slash
+    whitelist_dct={
+        '/etc/apt': 'apt-get configuration file directory',
+        '/etc/apt/sources.list.d': 'apt-get sources directory',
+        '/etc/network': 'All the config for the switch interfaces',
+        '/etc/cumulus/.license' : 'Post 2.5.2 license file',
+        '/etc/cumulus/.license.txt' : 'Pre-2.5.2 license file',
+        '/etc/cumulus/acl/policy.d': 'cl-acltool policies modified by user',
+        '/etc/cumulus/ssmonitor.d': 'jdoo config files for daemon monitoring',
+        '/etc/ptm.d': 'PTM daemon topology files',
+        '/etc/slotsync.conf': 'upgrade tool config file to copy config files to alternate slot.  Use this tool to configure that file'
+    }
+
+    whitelisted_file_dct={}
+
+    for filename in file_dct:
+        comment=None
+        if (filename in whitelist_dct) or ( os.path.dirname(filename) in whitelist_dct ):
+            # file or its dir is whitelisted, return a comment
+            comment=whitelist_dct.get(filename,'None')
+            if not comment:
+                comment=whitelist_dct.get(os.path.dirname(filename),'None')
+
+            whitelisted_file_dct[filename]=comment
+        else:
+            whitelisted_file_dct[filename]='File added by admin or 3rd party app'
+    
+    return whitelisted_file_dct
+
+
+def files_to_determine():
+    #These files need to be determined if they should be on whitelist, blacklist or neither
+    '''
+    /etc/sysctl.d/*
+    /etc/watchdog.d/*
+    /etc/bash_completion.d/*  (git, vxfldcommon, vxrdctl)
+    '''
+    
 
 # Collect all the file data:
 # find and extract install file based on arch
@@ -42,33 +119,50 @@ subprocess.call(['sh', installer_file, 'extract', tmp_dir])
 #subprocess.call(['cd', tmp_dir])
 
 # Actual command line to get the list of files out of the tar:
-'''tar -t -v --exclude='bin' --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
+'''tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
    --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
 '''
 
 install_list_raw=subprocess.check_output(['tar', '-t', '-v', '--exclude=bin', '--exclude=boot', '--exclude=usr',
                                           '--exclude=sbin', '--exclude=dev', '--exclude=run', '--exclude=var',
-                                          '--exclude=lib', '--full-time', '-f', 'sysroot-release.tar.gz', '|',
-                                          'egrep', '-v', '--', '^d|->'], cwd=tmp_dir)
-#Output sample:
+                                          '--exclude=lib', '--full-time', '-f', 'sysroot-release.tar.gz'], cwd=tmp_dir)
+#File sample:
 #-rw-r--r-- 105/107         111 2015-10-10 02:36:51 ./etc/quagga/bgpd.conf
-install_list_pattern=re.compile(r"""(?P<permissions>[rwxsStT-]+)\s+(?P<owner>\w+)/(?P<group>\w+)\s+
+install_file_pattern=re.compile(r"""(?P<permissions>-[rwxsStT-]+)\s+(?P<owner>\w+)/(?P<group>\w+)\s+
                                +(?P<size>\d+)\s+(?P<date>[0-9\-]+)\s+(?P<time>[0-9:]+)
                                \s+\.(?P<filename>\S+)
                                 """, re.X)
 
+# link sample
+#lrwxrwxrwx 0/0               0 2015-12-08 02:12:16 ./etc/alternatives/rlogin.1.gz -> /usr/share/man/man1/slogin.1.gz
+install_link_pattern=re.compile('^l')
+
+#directory sample
+#drwxr-xr-x 0/0               0 2015-02-22 11:38:03 ./etc/ld.so.conf.d/
+install_dir_pattern=re.compile('^d')
+
+
 for install_line in install_list_raw:
-    match=install_list_pattern(install_line)
+    match=install_file_pattern.match(install_line)
     if match:
         install_filename=match.group('filename')
         install_datetime='{} {}'.format(match.group('date'), match.group('time'))
         install_size=match.group('size')
         install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
+        continue    
     
-    else:
-        print('Error: Installed image filename, date, and size not parsed correctly from:')
-        print(install_line)
-        print('Decide what to do here... exit or continue')
+    match=install_link_pattern.match(install_line)
+    if match:
+        # This is a link.  Put in a separate list to check later
+        continue
+    
+    match=install_dir_pattern.match(install_line)
+    if match:
+        continue
+        
+    print('Error: Installed image filename, date, and size not parsed correctly from:')
+    print(install_line)
+    print('Decide what to do here... exit or continue')
         
 pprint(install_list_dct)
 
@@ -85,20 +179,41 @@ local_list_pattern=re.compile(r"""(?P<permissions>[rwxsStT-]+)\s+(?P<link_count>
 
 # Loop through all local files and determine adds, changes, deletes. 
 for local_line in local_list_raw:
+    comment=None
     match=local_list_pattern(local_line)
     if match:
         local_filename=match.group('filename')
         local_datetime='{} {}'.format(match.group('date'), match.group('time'))
         local_size=match.group('size')
         local_list_dct[local_filename]={ 'size': local_size, 'datetime' : local_datetime }
+        if local_filename in install_list_dct:
+            #File exists in both places.  Check to see if it has been modified
+            install_datetime=install_list_dct[local_filename]['datetime']
+            install_size=install_list_dct[local_filename]['size']
+            if ( local_size != install_size) or ( local_datetime != install_datetime):
+                #File has been changed
+                changed_file_dct[local_filename]=''
+
+        else:
+            #local file not installed by installer, it is an added file
+            added_file_dct[local_filename]=''
 
     else:
         print('Error: Local filename, date, and size not parsed correctly from:')
         print(local_line)
         print('Decide what to do here... exit or continue')
 
+print('Debugging output only')
+print('Temp added file list:')
+pprint(added_file_dct)
+print('Temp changed file list:')
+pprint(changed_file_dct)
 
-pprint(local_list_dct)
+# Loop through installed files and flag any files that have been deleted
+for install_filename in install_list_dct:
+    if install_filename not in local_list_dct:
+        deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
+
 
 #Remove tmp_dir here to save space in case of crash
 # comment line to debug
@@ -108,7 +223,22 @@ subprocess.call('rm', tmp_dir)
 
 # Loop through changes and compare to blacklist, whitelist
 
+added_file_dct=check_blacklist(added_file_dct)
+added_file_dct=check_whitelist(added_file_dct)
+
+changed_file_dct=check_blacklist(changed_file_dct)
+# No reason to check changed files against whitelist
+#changed_file_dct=check_whitelist(changed_file_dct)
+
+
 # Loop through deletes and compare to blacklist, whitelist
+# No need at this time
 
 # output results to screen and a slotsync.conf file
+print('Files Added since initial install:')
+pprint(added_file_dct)
+print('Files Changed since initial install:')
+pprint(changed_file_dct)
+print('Files Deleted since initial install:')
+pprint(deleted_file_dct)
 
