@@ -41,14 +41,19 @@ def check_blacklist(file_dct):
     blacklisted_file_dct={}
         
     for filename in file_dct:
-        comment=None
-        if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
+        #comment=None
+        #if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
             # file or its dir is not blacklisted, return the filename
-            blacklisted_file_dct[filename]=''
+        #    blacklisted_file_dct[filename]=''
             #comment=blacklist_dct.get(filename,'None')
             #if not comment:
             #    comment=blacklist_dct.get(os.path.dirname(filename),'None')
-
+        for blacklist_name in blacklist_dct:
+            #check for longest match available in blacklist name.
+            #e.g. if a dir is blacklisted, block all files in it
+            if not ( re.search( blacklist_name, filename)):
+                blacklisted_file_dct[filename]=''
+                    
     
     return blacklisted_file_dct    
 
