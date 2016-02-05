@@ -37,9 +37,11 @@ def check_blacklist(file_dct):
         '/etc/default/phy_ucode_update': 'Created during first boot.  Do not copy',
         '/etc/init': 'Platform initialization files. Do not copy',
         '/etc/init.d': 'Platform initialization files.  Do not copy',
+        '/etc/lsb-release' : 'System version data.  Do not copy',
         '/etc/lvm/archive': 'Filesystem files.  Do not copy',
         '/etc/lvm/backup': 'Filesystem files. Do not copy',
         '/etc/modules': 'Created during first boot.  Do not copy',
+        '/etc/os-release' : 'System version data. Do not copy',
         '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy'
     }
     blacklisted_file_dct={}
@@ -85,18 +87,21 @@ def check_whitelist(file_dct):
         '/etc/cumulus/ports.conf' : 'Front-panel interface definition',
         '/etc/cumulus/acl/policy.d': 'cl-acltool policies modified by user',
         '/etc/cumulus/ssmonitor.d': 'jdoo config files for daemon monitoring',
+        '/etc/default/isc-dhcp-relay' : 'DHCP relay config file',
         '/etc/hostname' : 'Hostname file.  May be set manually here or via DHCP',
         '/etc/motd' : 'Message of the day',
         '/etc/nsswitch.conf' : '',
         '/etc/network': 'All the config for the switch interfaces',
-        '/etc/passwd' : 'Password file',
+        '/etc/passwd' : 'System password file',
         '/etc/ptm.d': 'PTM daemon topology files',
         '/etc/quagga' : 'Quagga config files',
         '/etc/resolv.conf': 'DNS Resolver config.  Only include if modified and not using DHCP on eth0',
-        '/etc/shadow' : 'Password',
+        '/etc/shadow' : 'System password file',
         '/etc/ssh' : 'ssh config files',
         '/etc/sysctl.d' : 'sysctl control options',
-        '/etc/slotsync.conf': 'upgrade tool config file to copy config files to alternate slot.  Use this tool to configure that file'
+        '/etc/slotsync.conf': 'upgrade tool config file to copy config files to alternate slot.  Use this tool to configure that file',
+        '/home' : 'home directories for users',
+        '/root' : 'root user home directory'
     }
 
     whitelisted_file_dct={}
@@ -111,7 +116,7 @@ def check_whitelist(file_dct):
 
             whitelisted_file_dct[filename]=comment
         else:
-            whitelisted_file_dct[filename]='File added by admin or 3rd party app'
+            whitelisted_file_dct[filename]='File added/changed by admin or 3rd party app'
     
     return whitelisted_file_dct
 
@@ -212,7 +217,7 @@ if arch == 'arm':
     pass
 
 
-if arch == "x86_64":
+if arch == 'x86_64':
     installer_file='/var/lib/cumulus/installer/onie-installer'
 
     local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
@@ -353,10 +358,13 @@ pprint(added_file_dct)
 print('Temp changed file list:')
 pprint(changed_file_dct)
 
+# Cannot determine this on ppc, so only check x86
 # Loop through installed files and flag any files that have been deleted
-for install_filename in sorted(install_list_dct):
-    if install_filename not in local_list_dct:
-        deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
+# This may be a pointless exercise and can be safely removed
+if arch=='x86_64':
+    for install_filename in sorted(install_list_dct):
+        if install_filename not in local_list_dct:
+            deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
 
     
 #Remove tmp_dir here to save space in case of crash
@@ -389,7 +397,8 @@ print('Files Changed since initial install:')
 for filename in sorted(changed_file_dct):
     print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
     
-print('Files Deleted since initial install:')
-for filename in sorted(deleted_file_dct):
-    print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+if arch=='x86_64':    
+    print('Files Deleted since initial install:')
+    for filename in sorted(deleted_file_dct):
+        print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
