@@ -150,7 +150,7 @@ if arch == "ppc":
                                 \.(?P<msec>[0-9]+)
                                 \s+(?P<timezone>[\+\-0-9]+)
                                 \s+
-                                '''+'/mnt/root\-ro/(?P<filename>\S+)', re.X)
+                                '''+'/mnt/root\-ro(?P<filename>\S+)', re.X)
     
     
     slot_pattern=re.compile('active\s+\=\>\s+slot\s+(?P<slot>[12]+)')
