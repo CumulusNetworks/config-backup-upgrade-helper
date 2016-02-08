@@ -416,6 +416,7 @@ def main(argv):
     changed_file_dct={}
     deleted_file_dct={}
     tmp_dir=None
+    blank_line_pattern=re.compile('^\W*$')
 
     
     
@@ -485,17 +486,21 @@ def main(argv):
             else:
                 #local file not installed by installer, it is an added file
                 added_file_dct[local_filename]=''
-     
+
+        elif blank_line_pattern.match(local_line):
+            #Blank line. Ignore
+            pass
+        
         else:
-            print('Error: Local filename, date, and size not parsed correctly from:')
-            print(local_line)
+            print('Error: Local filename, date, and size not parsed correctly.')
+            print('Local Line: #'+local_line+'#')
             print('Decide what to do here... exit or continue')
      
     if debug:
         print('Temp added file list:', debug)
-        pprint(added_file_dct, debug)
+        print(pformat(added_file_dct), debug)
         print('Temp changed file list:', debug)
-        pprint(changed_file_dct, debug)
+        print(pformat(changed_file_dct), debug)
     
     # Cannot determine this on ppc, so only check x86
     # Loop through installed files and flag any files that have been deleted
