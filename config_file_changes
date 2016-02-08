@@ -374,7 +374,7 @@ def create_backup_tar(added_file_dct, changed_file_dct, arch, force):
     pass
 
 def process_exclude_list(exclude_arg):
-    exclude_list=exclude_arg.split(',').strip()
+    exclude_list=exclude_arg.split(',')
     return(exclude_list)
 
 
