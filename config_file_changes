@@ -314,12 +314,12 @@ def create_slotsync_conf(added_file_dct, changed_file_dct, force):
         os.rename(slotsync_fn, prev_slotsync)
         
     slotsync_file=open(slotsync_fn, 'w')
-    slotsync_file.write('# Files Added since install')
+    slotsync_file.write('# Files Added since install\n')
     for added_file in added_file_dct:
-        slotsync_file.write(added_file)
+        slotsync_file.write('{0}\n'.format(added_file))
         
-    slotsync_file.write('')
-    slotsync_file.write('# Files Changed since install')
+    slotsync_file.write('\n')
+    slotsync_file.write('# Files Changed since install\n')
     for changed_file in changed_file_dct:
         slotsync_file.write(changed_file)
         
