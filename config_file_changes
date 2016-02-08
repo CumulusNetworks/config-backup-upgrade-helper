@@ -152,10 +152,10 @@ def check_exclude_list(file_dct, exclude_list, debug=None):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
             if debug:
-                debug.write('searching: Exclude list item {0}  in {1}\n'.format(exclude_name.rstrip('/'), filename))
+                debug.write('searching: Exclude list item {0}  in {1}\n'.format(exclude_name.strip().rstrip('/'), filename))
             if ( re.search( exclude_name.strip().rstrip('/'), filename)):
                 if debug:
-                    debug.write('{0} Matches Exclude list. Ignoring\n'.format(exclude_name.rstrip('/')))
+                    debug.write('{0} Matches Exclude list. Ignoring\n'.format(exclude_name.strip().rstrip('/')))
                 please_exclude=True  
                 break
             
