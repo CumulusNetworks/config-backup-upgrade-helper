@@ -392,7 +392,7 @@ def main(argv):
         elif opt in ("-b", "--backup"):
             backup=True
         elif opt in ("-d", "--debug"):
-            debug=open('/etc/update-tools-debug.log', w)
+            debug=open('/etc/update-tools-debug.log', 'w')
         elif opt in ("-f", "--force"):
             force=True 
         elif opt in ("-n", "--dryrun"):
