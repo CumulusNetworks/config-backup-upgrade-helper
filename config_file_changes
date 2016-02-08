@@ -5,6 +5,7 @@ import subprocess
 import re
 import os
 from pprint import pprint 
+from pprint import pformat
 
 
 #To do's
@@ -15,13 +16,13 @@ from pprint import pprint
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
 # 6) Exclude dir list implementation
 #X 6) Refactor main into 1-2 smaller functions
-
+# 7) Check if root or sudo and warn/exit if not
 
 # Define blacklist filenames with commment data
 
 
 
-def check_blacklist(file_dct):
+def check_blacklist(file_dct, debug=None):
     # For more detailed information refer to this User Guide document:
     #https://docs.cumulusnetworks.com/display/DOCS/Troubleshooting+the+etc+Directory
     
@@ -47,7 +48,8 @@ def check_blacklist(file_dct):
         '/etc/lvm/backup': 'Filesystem files. Do not copy',
         '/etc/modules': 'Created during first boot.  Do not copy',
         '/etc/os-release' : 'System version data. Do not copy',
-        '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy'
+        '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy',
+        '/etc/update-tools-debug.log': 'Debug log for this script. Do not copy'
     }
     allowed_file_dct={}
         
@@ -62,9 +64,11 @@ def check_blacklist(file_dct):
         for blacklist_name in sorted(blacklist_dct):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
-            print('searching: {0}  in {1}'.format(blacklist_name, filename))
+            if debug:
+                print('searching: blacklist item {0}  in {1}'.format(blacklist_name, filename, debug))
             if ( re.search( blacklist_name, filename)):
-                print('{0} Matches'.format(blacklist_name))
+                if debug:
+                    print('{0} Matches Blacklist, ignoring'.format(blacklist_name), debug)
                 please_blacklist=True  
                 break
             
@@ -76,7 +80,7 @@ def check_blacklist(file_dct):
 
 # Define whitelist filenames with comment data
 
-def check_whitelist(file_dct):
+def check_whitelist(file_dct, debug):
     # The whitelist is only checked on files that were added since the binary was installed
     # Unlike the Blacklist, the Whitelist must match all the way to the last directory name
     # or the exact file name.
@@ -127,7 +131,7 @@ def check_whitelist(file_dct):
     return whitelisted_file_dct
 
 
-def check_exclude_list(file_dct, exclude_list):
+def check_exclude_list(file_dct, exclude_list, debug=None):
     allowed_file_dct={}
         
     # The exclude list attempts a longest match.  e.g. if you add '/etc' to this list,
@@ -138,9 +142,11 @@ def check_exclude_list(file_dct, exclude_list):
         for exclude_name in sorted(exclude_list):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
-            print('searching: {0}  in {1}'.format(exclude_name.rstrip('/'), filename))
+            if debug:
+                print('searching: Exclude list item {0}  in {1}'.format(exclude_name.rstrip('/'), filename, debug))
             if ( re.search( exclude_name.rstrip('/'), filename)):
-                print('{0} Matches'.format(exclude_name.rstrip('/')))
+                if debug:
+                    print('{0} Matches Exclude list. Ignoring'.format(exclude_name.rstrip('/')), debug)
                 please_exclude=True  
                 break
             
@@ -171,7 +177,7 @@ def usage():
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
-def get_ppc_files():
+def get_ppc_files(debug):
     install_list_dct={}
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
@@ -232,7 +238,7 @@ def get_ppc_files():
     return install_list_dct, local_list_raw
 
 
-def get_x86_files():
+def get_x86_files(debug):
 
     install_list_dct={}    
     installer_file='/var/lib/cumulus/installer/onie-installer'
@@ -258,7 +264,7 @@ def get_x86_files():
     install_dir_pattern=re.compile('^d')
     
     #blank line
-    install_blank_pattern=re.compile('^\s*$')
+    install_blank_pattern=re.compile('^\W*$')
  
  
     # untar sysroot partition file data and store
@@ -290,7 +296,9 @@ def get_x86_files():
                                              cwd=tmp_dir)
     
     for install_line in install_list_raw.split('\n'):
-        print('Install line {}'.format(install_line))
+        if debug:
+            print('Install line {}'.format(install_line), debug)
+            
         match=install_file_pattern.match(install_line)
         if match:
             install_filename=match.group('filename')
@@ -312,11 +320,12 @@ def get_x86_files():
     
         else:
             # No match
-            print('Error: Installed image filename, date, and size not parsed correctly from:')
-            print(install_line)
+            print('Error: Installed image filename, date, and size not parsed correctly.')
+            print('Line: #'+install_line+'#')
             print('Decide what to do here... exit or continue')
             
-    pprint(install_list_dct)
+    if debug:
+        print(pformat(install_list_dct), debug)
     
     # find all files in /etc /home /root in locally installed files and store
     local_list_raw=subprocess.check_output(['find',
@@ -363,15 +372,16 @@ def main(argv):
     
     force=False
     backup=False
+    debug=False
     sync=False
     dryrun=False
     quiet=False
     exclude_list=[]
     
     try:
-        opts, args = getopt.getopt(argv,"hbfnqsx:",["help", "backup", "force",
-                                                   "dryrun", "quiet", "sync",
-                                                   "exclude="])
+        opts, args = getopt.getopt(argv,"hbdfnqsx:",["help", "backup", "debug",
+                                                     "force", "dryrun", "quiet",
+                                                     "sync", "exclude="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -381,6 +391,8 @@ def main(argv):
             sys.exit()
         elif opt in ("-b", "--backup"):
             backup=True
+        elif opt in ("-d", "--debug"):
+            debug=open('/etc/update-tools-debug.log', w)
         elif opt in ("-f", "--force"):
             force=True 
         elif opt in ("-n", "--dryrun"):
@@ -479,11 +491,11 @@ def main(argv):
             print(local_line)
             print('Decide what to do here... exit or continue')
      
-    print('Debugging output only')
-    print('Temp added file list:')
-    pprint(added_file_dct)
-    print('Temp changed file list:')
-    pprint(changed_file_dct)
+    if debug:
+        print('Temp added file list:', debug)
+        pprint(added_file_dct, debug)
+        print('Temp changed file list:', debug)
+        pprint(changed_file_dct, debug)
     
     # Cannot determine this on ppc, so only check x86
     # Loop through installed files and flag any files that have been deleted
@@ -502,16 +514,16 @@ def main(argv):
     # End if arch=x86
     
     # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
-    added_file_dct=check_blacklist(added_file_dct)
-    added_file_dct=check_exclude_list(added_file_dct, exclude_list)
-    added_file_dct=check_whitelist(added_file_dct)
+    added_file_dct=check_blacklist(added_file_dct, debug)
+    added_file_dct=check_exclude_list(added_file_dct, exclude_list, debug)
+    added_file_dct=check_whitelist(added_file_dct, debug)
     
     # Loop through changes and compare to blacklist
-    changed_file_dct=check_blacklist(changed_file_dct)
-    changed_file_dct=check_exclude_list(changed_file_dct, exclude_list)
+    changed_file_dct=check_blacklist(changed_file_dct, debug)
+    changed_file_dct=check_exclude_list(changed_file_dct, exclude_list, debug)
     # The only reason to check changed files against whitelist is to mark them with comments.
     # if they were changed and not blacklisted, they are important
-    changed_file_dct=check_whitelist(changed_file_dct)
+    changed_file_dct=check_whitelist(changed_file_dct, debug)
     
     
     # Loop through deletes and compare to blacklist, whitelist
