@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys, getopt
 import subprocess
 import re
 import os
@@ -13,8 +14,19 @@ changed_file_dct={}
 deleted_file_dct={}
 tmp_dir=None
 
-# Define whitelist filenames with comment data
+
+#To do's
+#X 1) implement arg processing
+# 2) backup archive option
+#X 3) Create slotsync file
+# 4) Call slotsync script
+# 5) Package into deb with slotsync - upgrade-tools  (Ben)
+#X 6) Refactor main into 1-2 smaller functions
+
+
 # Define blacklist filenames with commment data
+
+
 
 def check_blacklist(file_dct):
     # For more detailed information refer to this User Guide document:
@@ -69,6 +81,7 @@ def check_blacklist(file_dct):
     return blacklisted_file_dct    
 
 
+# Define whitelist filenames with comment data
 
 def check_whitelist(file_dct):
     # The whitelist is only checked on files that were added since the binary was installed
@@ -129,35 +142,36 @@ def files_to_determine():
     /etc/bash_completion.d/*  (git, vxfldcommon, vxrdctl)
     '''
     
+def usage():
+    
+    print "Usage:  Determine changed config files in order to backup or sync to other slot"
+    print "{0<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
+    print "{0<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files")
+    print "{0<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
+    print "{0<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
+    print "{0<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
+    print "{0<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    print "{0<15}: {1}".format("-h, --help", "Show this message")
 
 
- 
-
-# Collect all the file data:
-# find and extract install file based on arch
-
-# run uname -a
-arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
-
-if arch == "ppc":
+def get_ppc_files():
+    install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                    \s+(?P<link_count>[0-9]+)
+                                    \s+(?P<owner>\w+)
+                                    \s+(?P<group>\w+)
+                                    \s+(?P<size>\d+)
+                                    \s+(?P<date>[0-9\-]+)
+                                    \s+(?P<time>[0-9:]+)
+                                    \.(?P<msec>[0-9]+)
+                                    \s+(?P<timezone>[\+\-0-9]+)
+                                    \s+
+                                    '''+'/mnt/root\-ro(?P<filename>\S+)', re.X)
+        
     # Get active slot
     #active => slot 2 (alt    ): 2.5.2-727a0c6-201504132128-build
     # or
     #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
 
-    install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
-                                \s+(?P<link_count>[0-9]+)
-                                \s+(?P<owner>\w+)
-                                \s+(?P<group>\w+)
-                                \s+(?P<size>\d+)
-                                \s+(?P<date>[0-9\-]+)
-                                \s+(?P<time>[0-9:]+)
-                                \.(?P<msec>[0-9]+)
-                                \s+(?P<timezone>[\+\-0-9]+)
-                                \s+
-                                '''+'/mnt/root\-ro(?P<filename>\S+)', re.X)
-    
-    
     slot_pattern=re.compile('active\s+\=\>\s+slot\s+(?P<slot>[12]+)')
     cl_img_select=subprocess.check_output('cl-img-select')
     match=slot_pattern.search(cl_img_select)
@@ -178,7 +192,7 @@ if arch == "ppc":
                                                 '-type', 'f',
                                                 '-exec', 'ls', '-l', '--full-time', '{}', ';'])
         
-        
+       
         #Output sample:
         #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
         
@@ -196,41 +210,14 @@ if arch == "ppc":
         exit()
         
         
-    local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
-                                \s+(?P<link_count>[0-9]+)
-                                \s+(?P<owner>\w+)
-                                \s+(?P<group>\w+)
-                                \s+(?P<size>\d+)
-                                \s+(?P<date>[0-9\-]+)
-                                \s+(?P<time>[0-9:]+)
-                                \.(?P<msec>[0-9]+)
-                                \s+(?P<timezone>[\+\-0-9]+)
-                                \s+
-                                '''+'/mnt/root\-rw/'+slot+'(?P<filename>\S+)', re.X)
+     
+    return install_list_dct, local_list_raw
 
-        
-    # End if arch=ppc
+    #End get_ppc_files()
+
+def get_x86_files():
     
-    
-if arch == 'arm':
-    #TBD
-    pass
-
-
-if arch == 'x86_64':
     installer_file='/var/lib/cumulus/installer/onie-installer'
-
-    local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
-                                  \s+(?P<link_count>[0-9]+)
-                                  \s+(?P<owner>\w+)
-                                  \s+(?P<group>\w+)
-                                  \s+(?P<size>\d+)
-                                  \s+(?P<date>[0-9\-]+)
-                                  \s+(?P<time>[0-9:]+)
-                                  \.(?P<msec>[0-9]+)
-                                  \s+(?P<timezone>[\+\-0-9]+)
-                                  \s+(?P<filename>\S+)
-                                  ''', re.X)
 
     #Setup Regex's to parse the tar output
     #File sample:
@@ -266,22 +253,23 @@ if arch == 'x86_64':
     #subprocess.call(['cd', tmp_dir])
     
     # Actual command line to get the list of files out of the tar:
-    '''tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
+    '''
+    tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
        --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
     '''
     
     install_list_raw=subprocess.check_output(['tar', '-t', '-v',
-                                              '--exclude=bin',
-                                              '--exclude=boot',
-                                              '--exclude=usr',
-                                              '--exclude=sbin',
-                                              '--exclude=dev',
-                                              '--exclude=run',
-                                              '--exclude=var',
-                                              '--exclude=lib',
-                                              '--full-time',
-                                              '-f', 'sysroot-release.tar.gz'],
-                                              cwd=tmp_dir)
+                                             '--exclude=bin',
+                                             '--exclude=boot',
+                                             '--exclude=usr',
+                                             '--exclude=sbin',
+                                             '--exclude=dev',
+                                             '--exclude=run',
+                                             '--exclude=var',
+                                             '--exclude=lib',
+                                             '--full-time',
+                                             '-f', 'sysroot-release.tar.gz'],
+                                             cwd=tmp_dir)
     
     for install_line in install_list_raw.split('\n'):
         print('Install line {}'.format(install_line))
@@ -322,83 +310,197 @@ if arch == 'x86_64':
     #Output sample:
     #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
     
-    # End if arch=x86
+    # End get_x86_files()
+
+def create_slotsync_conf(added_file_dct, changed_file_dct, force):
+    slotsync_fn='/etc/slotsync.conf'
+    prev_slotsync='/etc/slotsync.bak'
+    # backup the previous slotsync file if exists
+    if os.path.exists(slotsync_fn):
+        os.rename(slotsync_fn, prev_slotsync)
+        
+    slotsync_file=open(slotsync_fn, 'w')
+    slotsync_file.write('# Files Added since install')
+    for added_file in added_file_dct:
+        slotsync_file.write(added_file)
+        
+    slotsync_file.write('')
+    slotsync_file.write('# Files Changed since install')
+    for changed_file in changed_file_dct:
+        slotsync_file.write(changed_file)
+        
+    slotsync_file.close()
+    
+        
+def create_backup_tar(added_file_dct, changed_file_dct, arch, force):
+    pass
 
 
- 
-# Loop through all local files and determine adds, changes, deletes. 
-for local_line in local_list_raw.split('\n'):
-    comment=None
-    match=local_list_pattern.match(local_line)
-    if match:
-        local_filename=match.group('filename')
-        local_datetime='{} {}'.format(match.group('date'), match.group('time'))
-        local_size=match.group('size')
-        local_list_dct[local_filename]={ 'size': local_size, 'datetime' : local_datetime }
-        if local_filename in install_list_dct:
-            #File exists in both places.  Check to see if it has been modified
-            install_datetime=install_list_dct[local_filename]['datetime']
-            install_size=install_list_dct[local_filename]['size']
-            if ( local_size != install_size) or ( local_datetime != install_datetime):
-                #File has been changed
-                changed_file_dct[local_filename]=''
 
+def main(argv):
+    
+    force=False
+    backup=False
+    sync=False
+    dryrun=False
+    quiet=False
+    
+    try:
+        opts, args = getopt.getopt(argv,"bnsfh",["help", "backup", "sync"])
+    except getopt.GetoptError:
+        usage
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            usage
+            sys.exit()
+        elif opt in ("-b", "--backup"):
+            backup=True
+        elif opt in ("-q", "--quiet"):
+            quiet=True
+        elif opt in ("-s", "--sync"):
+            sync=True
+        elif opt in ("-f", "--force"):
+            force=True 
+        elif opt in ("-n", "--dryrun"):
+            dryrun=True
         else:
-            #local file not installed by installer, it is an added file
-            added_file_dct[local_filename]=''
-
-    else:
-        print('Error: Local filename, date, and size not parsed correctly from:')
-        print(local_line)
-        print('Decide what to do here... exit or continue')
-
-print('Debugging output only')
-print('Temp added file list:')
-pprint(added_file_dct)
-print('Temp changed file list:')
-pprint(changed_file_dct)
-
-# Cannot determine this on ppc, so only check x86
-# Loop through installed files and flag any files that have been deleted
-# This may be a pointless exercise and can be safely removed
-if arch=='x86_64':
-    for install_filename in sorted(install_list_dct):
-        if install_filename not in local_list_dct:
-            deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
-
+            print("Bug: Unhandled option")
+            sys.exit()
     
-#Remove tmp_dir here to save space in case of crash
-# comment line to debug
-if tmp_dir:
-    subprocess.call(['rm', '-rf', tmp_dir])
-
-# End if arch=x86
-
-# Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
-added_file_dct=check_blacklist(added_file_dct)
-added_file_dct=check_whitelist(added_file_dct)
-
-# Loop through changes and compare to blacklist
-changed_file_dct=check_blacklist(changed_file_dct)
-# The only reason to check changed files against whitelist is to mark them with comments.
-# if they were changed and not blacklisted, they are important
-changed_file_dct=check_whitelist(changed_file_dct)
-
-
-# Loop through deletes and compare to blacklist, whitelist
-# No need at this time
-
-# output results to screen and a slotsync.conf file
-print('Files Added since initial install:')
-for filename in sorted(added_file_dct):
-    print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
-
-print('Files Changed since initial install:')
-for filename in sorted(changed_file_dct):
-    print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
     
-if arch=='x86_64':    
-    print('Files Deleted since initial install:')
-    for filename in sorted(deleted_file_dct):
-        print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+    
+    # Collect all the file data:
+    # find and extract install file based on arch
+    
+    # run uname -a
+    arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
+    
+    if arch == "ppc":
+        install_list, local_list_raw = get_ppc_files()
+        local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                    \s+(?P<link_count>[0-9]+)
+                                    \s+(?P<owner>\w+)
+                                    \s+(?P<group>\w+)
+                                    \s+(?P<size>\d+)
+                                    \s+(?P<date>[0-9\-]+)
+                                    \s+(?P<time>[0-9:]+)
+                                    \.(?P<msec>[0-9]+)
+                                    \s+(?P<timezone>[\+\-0-9]+)
+                                    \s+
+                                    '''+'/mnt/root\-rw/'+slot+'(?P<filename>\S+)', re.X)
 
+     
+     
+       # End if arch=ppc
+       
+       
+    if arch == 'arm':
+        #TBD - probably will look like x86
+        pass
+     
+    
+    if arch == 'x86_64':
+        install_list, local_list_raw = get_x86_files()
+     
+        local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
+                                      \s+(?P<link_count>[0-9]+)
+                                      \s+(?P<owner>\w+)
+                                      \s+(?P<group>\w+)
+                                      \s+(?P<size>\d+)
+                                      \s+(?P<date>[0-9\-]+)
+                                      \s+(?P<time>[0-9:]+)
+                                      \.(?P<msec>[0-9]+)
+                                      \s+(?P<timezone>[\+\-0-9]+)
+                                      \s+(?P<filename>\S+)
+                                      ''', re.X)
+      
+    
+    
+    # Loop through all local files and determine adds, changes, deletes. 
+    for local_line in local_list_raw.split('\n'):
+        comment=None
+        match=local_list_pattern.match(local_line)
+        if match:
+            local_filename=match.group('filename')
+            local_datetime='{} {}'.format(match.group('date'), match.group('time'))
+            local_size=match.group('size')
+            local_list_dct[local_filename]={ 'size': local_size, 'datetime' : local_datetime }
+            if local_filename in install_list_dct:
+                #File exists in both places.  Check to see if it has been modified
+                install_datetime=install_list_dct[local_filename]['datetime']
+                install_size=install_list_dct[local_filename]['size']
+                if ( local_size != install_size) or ( local_datetime != install_datetime):
+                    #File has been changed
+                    changed_file_dct[local_filename]=''
+     
+            else:
+                #local file not installed by installer, it is an added file
+                added_file_dct[local_filename]=''
+     
+        else:
+            print('Error: Local filename, date, and size not parsed correctly from:')
+            print(local_line)
+            print('Decide what to do here... exit or continue')
+     
+    print('Debugging output only')
+    print('Temp added file list:')
+    pprint(added_file_dct)
+    print('Temp changed file list:')
+    pprint(changed_file_dct)
+    
+    # Cannot determine this on ppc, so only check x86
+    # Loop through installed files and flag any files that have been deleted
+    # This may be a pointless exercise and can be safely removed
+    if arch=='x86_64':
+        for install_filename in sorted(install_list_dct):
+            if install_filename not in local_list_dct:
+                deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
+     
+       
+    #Remove tmp_dir here to save space in case of crash
+    # comment line to debug
+    if tmp_dir:
+        subprocess.call(['rm', '-rf', tmp_dir])
+    
+    # End if arch=x86
+    
+    # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
+    added_file_dct=check_blacklist(added_file_dct)
+    added_file_dct=check_whitelist(added_file_dct)
+    
+    # Loop through changes and compare to blacklist
+    changed_file_dct=check_blacklist(changed_file_dct)
+    # The only reason to check changed files against whitelist is to mark them with comments.
+    # if they were changed and not blacklisted, they are important
+    changed_file_dct=check_whitelist(changed_file_dct)
+    
+    
+    # Loop through deletes and compare to blacklist, whitelist
+    # No need at this time
+    
+    # output results to screen and a slotsync.conf file
+    if not quiet:
+        print('Files Added since initial install:')
+        for filename in sorted(added_file_dct):
+            print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
+        
+        print('Files Changed since initial install:')
+        for filename in sorted(changed_file_dct):
+            print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
+           
+        if arch=='x86_64':    
+            print('Files Deleted since initial install:')
+            for filename in sorted(deleted_file_dct):
+                print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+
+    if sync and not dryrun:
+        create_slotsync_conf(added_file_dct, changed_file_dct, force)
+        
+    if backup and not dryrun:
+        create_backup_tar(added_file_dct, changed_file_dct, arch, force)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+    
