@@ -210,10 +210,9 @@ def get_ppc_files():
         exit()
         
         
-     
+    #End get_ppc_files()     
     return install_list_dct, local_list_raw
 
-    #End get_ppc_files()
 
 def get_x86_files():
     
@@ -240,7 +239,7 @@ def get_x86_files():
     install_dir_pattern=re.compile('^d')
     
     #blank line
-    install_blank_pattern=re.compile('^\s+$')
+    install_blank_pattern=re.compile('^\s*$')
  
  
     # untar sysroot partition file data and store
@@ -279,24 +278,24 @@ def get_x86_files():
             install_datetime='{} {}'.format(match.group('date'), match.group('time'))
             install_size=match.group('size')
             install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
-            continue    
-        
-        match=install_link_pattern.match(install_line)
-        if match:
-            # This is a link.  Put in a separate list to check later
-            continue
-        
-        match=install_dir_pattern.match(install_line)
-        if match:
-            continue
             
-        match=install_blank_pattern.match(install_line)
-        if match:
-            continue
+        elif install_link_pattern.match(install_line):
+            # This is a link.  Put in a separate list to check later
+            pass
+        
+        elif install_dir_pattern.match(install_line):
+            # This is a directory. ignore
+            pass
+            
+        elif install_blank_pattern.match(install_line):
+            #Blank line. Ignore
+            pass
     
-        print('Error: Installed image filename, date, and size not parsed correctly from:')
-        print(install_line)
-        print('Decide what to do here... exit or continue')
+        else:
+            # No match
+            print('Error: Installed image filename, date, and size not parsed correctly from:')
+            print(install_line)
+            print('Decide what to do here... exit or continue')
             
     pprint(install_list_dct)
     
@@ -311,6 +310,7 @@ def get_x86_files():
     #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
     
     # End get_x86_files()
+    return install_list_dct, local_list_raw
 
 def create_slotsync_conf(added_file_dct, changed_file_dct, force):
     slotsync_fn='/etc/slotsync.conf'
@@ -377,7 +377,7 @@ def main(argv):
     arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
     
     if arch == "ppc":
-        install_list, local_list_raw = get_ppc_files()
+        install_list_dct, local_list_raw = get_ppc_files()
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -401,7 +401,7 @@ def main(argv):
      
     
     if arch == 'x86_64':
-        install_list, local_list_raw = get_x86_files()
+        install_list_dct, local_list_raw = get_x86_files()
      
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                       \s+(?P<link_count>[0-9]+)
