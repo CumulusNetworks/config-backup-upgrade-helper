@@ -13,6 +13,7 @@ from pprint import pprint
 #X 3) Create slotsync file
 # 4) Call slotsync script
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
+# 6) Exclude dir list implementation
 #X 6) Refactor main into 1-2 smaller functions
 
 
@@ -48,13 +49,13 @@ def check_blacklist(file_dct):
         '/etc/os-release' : 'System version data. Do not copy',
         '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy'
     }
-    blacklisted_file_dct={}
+    allowed_file_dct={}
         
     for filename in sorted(file_dct):
         please_blacklist=None
         #if (filename not in blacklist_dct) and ( os.path.dirname(filename) not in blacklist_dct ):
             # file or its dir is not blacklisted, return the filename
-        #    blacklisted_file_dct[filename]=''
+        #    allowed_file_dct[filename]=''
             #comment=blacklist_dct.get(filename,None)
             #if not comment:
             #    comment=blacklist_dct.get(os.path.dirname(filename),'None')
@@ -68,9 +69,9 @@ def check_blacklist(file_dct):
                 break
             
         if not please_blacklist:
-            blacklisted_file_dct[filename]=''
+            allowed_file_dct[filename]=''
 
-    return blacklisted_file_dct    
+    return allowed_file_dct    
 
 
 # Define whitelist filenames with comment data
@@ -113,11 +114,11 @@ def check_whitelist(file_dct):
 
     for filename in file_dct:
         comment=None
-        if (filename in whitelist_dct) or ( os.path.dirname(filename) in whitelist_dct ):
+        if (filename.rstrip('/') in whitelist_dct) or ( os.path.dirname(filename).rstrip('/') in whitelist_dct ):
             # file or its dir is whitelisted, return a comment
             comment=whitelist_dct.get(filename,None)
             if not comment:
-                comment=whitelist_dct.get(os.path.dirname(filename),None)
+                comment=whitelist_dct.get(os.path.dirname(filename).rstrip('/'),None)
 
             whitelisted_file_dct[filename]=comment
         else:
@@ -125,6 +126,29 @@ def check_whitelist(file_dct):
     
     return whitelisted_file_dct
 
+
+def check_exclude_list(file_dct, exclude_list):
+    allowed_file_dct={}
+        
+    # The exclude list attempts a longest match.  e.g. if you add '/etc' to this list,
+    #  the entire /etc dir would be excluded (i.e. don't do that)
+
+    for filename in sorted(file_dct):
+        please_exclude=None
+        for exclude_name in sorted(exclude_list):
+            #check for longest match available in blacklist name.
+            #e.g. if a dir is blacklisted, block all files in it
+            print('searching: {0}  in {1}'.format(exclude_name.rstrip('/'), filename))
+            if ( re.search( exclude_name.rstrip('/'), filename)):
+                print('{0} Matches'.format(exclude_name.rstrip('/')))
+                please_exclude=True  
+                break
+            
+        if not please_exclude:
+            allowed_file_dct[filename]=''
+
+    return allowed_file_dct    
+    
 
 def files_to_determine():
     #These files need to be determined if they should be on whitelist, blacklist or neither
@@ -143,6 +167,7 @@ def usage():
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
     print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
     print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
@@ -315,18 +340,21 @@ def create_slotsync_conf(added_file_dct, changed_file_dct, force):
         
     slotsync_file=open(slotsync_fn, 'w')
     slotsync_file.write('# Files Added since install\n')
-    for added_file in added_file_dct:
+    for added_file in sorted(added_file_dct):
         slotsync_file.write('{0}\n'.format(added_file))
         
     slotsync_file.write('\n')
     slotsync_file.write('# Files Changed since install\n')
-    for changed_file in changed_file_dct:
-        slotsync_file.write(changed_file)
+    for changed_file in sorted(changed_file_dct):
+        slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
     
         
 def create_backup_tar(added_file_dct, changed_file_dct, arch, force):
+    pass
+
+def process_exclude_list(exclude_arg):
     pass
 
 
@@ -338,9 +366,12 @@ def main(argv):
     sync=False
     dryrun=False
     quiet=False
+    exclude_list=[]
     
     try:
-        opts, args = getopt.getopt(argv,"bnsfh",["help", "backup", "sync"])
+        opts, args = getopt.getopt(argv,"hbfnqsx:",["help", "backup", "force",
+                                                   "dryrun", "quiet", "sync",
+                                                   "exclude="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -350,14 +381,16 @@ def main(argv):
             sys.exit()
         elif opt in ("-b", "--backup"):
             backup=True
-        elif opt in ("-q", "--quiet"):
-            quiet=True
-        elif opt in ("-s", "--sync"):
-            sync=True
         elif opt in ("-f", "--force"):
             force=True 
         elif opt in ("-n", "--dryrun"):
             dryrun=True
+        elif opt in ("-q", "--quiet"):
+            quiet=True
+        elif opt in ("-s", "--sync"):
+            sync=True
+        elif opt in ("-x", "--exclude"):
+            exclude_list=process_exclude_list(arg)
         else:
             print("Bug: Unhandled option")
             sys.exit()
@@ -404,7 +437,6 @@ def main(argv):
     
     if arch == 'x86_64':
         install_list_dct, local_list_raw = get_x86_files()
-     
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                       \s+(?P<link_count>[0-9]+)
                                       \s+(?P<owner>\w+)
@@ -469,10 +501,12 @@ def main(argv):
     
     # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
     added_file_dct=check_blacklist(added_file_dct)
+    added_file_dct=check_exclude_list(added_file_dct, exclude_list)
     added_file_dct=check_whitelist(added_file_dct)
     
     # Loop through changes and compare to blacklist
     changed_file_dct=check_blacklist(changed_file_dct)
+    changed_file_dct=check_exclude_list(changed_file_dct, exclude_list)
     # The only reason to check changed files against whitelist is to mark them with comments.
     # if they were changed and not blacklisted, they are important
     changed_file_dct=check_whitelist(changed_file_dct)
