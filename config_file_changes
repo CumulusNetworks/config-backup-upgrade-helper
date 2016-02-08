@@ -147,6 +147,7 @@ def usage():
 
 
 def get_ppc_files():
+    install_list_dct={}
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -199,7 +200,7 @@ def get_ppc_files():
  
     else:
         print('Error: Could not match active slot in cl-img-select')
-        exit()
+        sys.exit(1)
         
         
     #End get_ppc_files()     
@@ -207,7 +208,8 @@ def get_ppc_files():
 
 
 def get_x86_files():
-    
+
+    install_list_dct={}    
     installer_file='/var/lib/cumulus/installer/onie-installer'
 
     #Setup Regex's to parse the tar output
