@@ -9,14 +9,15 @@ from pprint import pformat
 
 
 #To do's
-#X 1) implement arg processing
 # 2) backup archive option
-#X 3) Create slotsync file
+# 7) Check if root or sudo and warn/exit if not
 # 4) Call slotsync script
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
-# 6) Exclude dir list implementation
+
+#X 1) implement arg processing
+#X 3) Create slotsync file
+#X 6) Exclude dir list implementation
 #X 6) Refactor main into 1-2 smaller functions
-# 7) Check if root or sudo and warn/exit if not
 
 # Define blacklist filenames with commment data
 
