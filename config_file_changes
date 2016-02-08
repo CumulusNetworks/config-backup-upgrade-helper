@@ -65,10 +65,10 @@ def check_blacklist(file_dct, debug=None):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
             if debug:
-                print('searching: blacklist item {0}  in {1}'.format(blacklist_name, filename, debug))
+                debug.write('searching: blacklist item {0}  in {1}'.format(blacklist_name, filename))
             if ( re.search( blacklist_name, filename)):
                 if debug:
-                    print('{0} Matches Blacklist, ignoring'.format(blacklist_name), debug)
+                    debug.write('{0} Matches Blacklist, ignoring'.format(blacklist_name))
                 please_blacklist=True  
                 break
             
@@ -143,10 +143,10 @@ def check_exclude_list(file_dct, exclude_list, debug=None):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
             if debug:
-                print('searching: Exclude list item {0}  in {1}'.format(exclude_name.rstrip('/'), filename, debug))
+                debug.write('searching: Exclude list item {0}  in {1}'.format(exclude_name.rstrip('/'), filename))
             if ( re.search( exclude_name.rstrip('/'), filename)):
                 if debug:
-                    print('{0} Matches Exclude list. Ignoring'.format(exclude_name.rstrip('/')), debug)
+                    debug.write('{0} Matches Exclude list. Ignoring'.format(exclude_name.rstrip('/')))
                 please_exclude=True  
                 break
             
@@ -297,7 +297,7 @@ def get_x86_files(debug=None):
     
     for install_line in install_list_raw.split('\n'):
         if debug:
-            print('Install line {}'.format(install_line), debug)
+            debug.write('Install line {}'.format(install_line))
             
         match=install_file_pattern.match(install_line)
         if match:
@@ -325,7 +325,7 @@ def get_x86_files(debug=None):
             print('Decide what to do here... exit or continue')
             
     if debug:
-        print(pformat(install_list_dct), debug)
+        debug.write(pformat(install_list_dct))
     
     # find all files in /etc /home /root in locally installed files and store
     local_list_raw=subprocess.check_output(['find',
@@ -497,10 +497,10 @@ def main(argv):
             print('Decide what to do here... exit or continue')
      
     if debug:
-        print('Temp added file list:', debug)
-        print(pformat(added_file_dct), debug)
-        print('Temp changed file list:', debug)
-        print(pformat(changed_file_dct), debug)
+        debug.write('Temp added file list:')
+        debug.write(pformat(added_file_dct))
+        debug.write('Temp changed file list:')
+        debug.write(pformat(changed_file_dct))
     
     # Cannot determine this on ppc, so only check x86
     # Loop through installed files and flag any files that have been deleted
