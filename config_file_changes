@@ -145,13 +145,13 @@ def files_to_determine():
 def usage():
     
     print "Usage:  Determine changed config files in order to backup or sync to other slot"
-    print "{0<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
-    print "{0<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files")
-    print "{0<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
-    print "{0<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
-    print "{0<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
-    print "{0<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
-    print "{0<15}: {1}".format("-h, --help", "Show this message")
+    print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
+    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files")
+    print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
+    print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
+    print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
+    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
 def get_ppc_files():
