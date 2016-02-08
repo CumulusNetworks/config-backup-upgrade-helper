@@ -52,6 +52,8 @@ def check_blacklist(file_dct, debug=None):
         '/etc/update-tools-debug.log': 'Debug log for this script. Do not copy'
     }
     allowed_file_dct={}
+    if debug:
+        debug.write('\n------------------------------\nBlacklist Processing:\n')
         
     for filename in sorted(file_dct):
         please_blacklist=None
@@ -115,11 +117,16 @@ def check_whitelist(file_dct, debug):
     }
 
     whitelisted_file_dct={}
+    if debug:
+        debug.write('\n------------------------------\nWhitelist Processing:\n')
 
     for filename in file_dct:
         comment=None
         if (filename.rstrip('/') in whitelist_dct) or ( os.path.dirname(filename).rstrip('/') in whitelist_dct ):
             # file or its dir is whitelisted, return a comment
+            if debug:
+                debug.write('Whitelisting: {0}\n'.format(filename))
+
             comment=whitelist_dct.get(filename,None)
             if not comment:
                 comment=whitelist_dct.get(os.path.dirname(filename).rstrip('/'),None)
@@ -136,6 +143,8 @@ def check_exclude_list(file_dct, exclude_list, debug=None):
         
     # The exclude list attempts a longest match.  e.g. if you add '/etc' to this list,
     #  the entire /etc dir would be excluded (i.e. don't do that)
+    if debug:
+        debug.write('\n------------------------------\nExclude List Processing:\n')
 
     for filename in sorted(file_dct):
         please_exclude=None
@@ -296,8 +305,8 @@ def get_x86_files(debug=None):
                                              cwd=tmp_dir)
     
     for install_line in install_list_raw.split('\n'):
-        if debug:
-            debug.write('Install line {}\n'.format(install_line))
+        #if debug:
+        #    debug.write('Processing install line {}\n'.format(install_line))
             
         match=install_file_pattern.match(install_line)
         if match:
@@ -325,6 +334,7 @@ def get_x86_files(debug=None):
             print('Decide what to do here... exit or continue')
             
     if debug:
+        debug.write('--------------------------\ninstall_list_dct:\n')
         debug.write(pformat(install_list_dct))
     
     # find all files in /etc /home /root in locally installed files and store
@@ -499,9 +509,9 @@ def main(argv):
             print('Decide what to do here... exit or continue')
      
     if debug:
-        debug.write('\nTemp added file list:\n')
+        debug.write('\n------------------------------\nTemp added file list:\n')
         debug.write(pformat(added_file_dct))
-        debug.write('\nTemp changed file list:\n')
+        debug.write('\n------------------------------\nTemp changed file list:\n')
         debug.write(pformat(changed_file_dct))
     
     # Cannot determine this on ppc, so only check x86
@@ -542,7 +552,7 @@ def main(argv):
         for filename in sorted(added_file_dct):
             print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
 
-        print()
+        print('')
         print('Files Changed since initial install:')
         for filename in sorted(changed_file_dct):
             print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
