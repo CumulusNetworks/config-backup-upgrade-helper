@@ -177,7 +177,7 @@ def usage():
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
-def get_ppc_files(debug):
+def get_ppc_files(debug=None):
     install_list_dct={}
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
@@ -238,7 +238,7 @@ def get_ppc_files(debug):
     return install_list_dct, local_list_raw
 
 
-def get_x86_files(debug):
+def get_x86_files(debug=None):
 
     install_list_dct={}    
     installer_file='/var/lib/cumulus/installer/onie-installer'
@@ -426,7 +426,7 @@ def main(argv):
     arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
     
     if arch == "ppc":
-        install_list_dct, local_list_raw = get_ppc_files()
+        install_list_dct, local_list_raw = get_ppc_files(debug)
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -450,7 +450,7 @@ def main(argv):
      
     
     if arch == 'x86_64':
-        install_list_dct, local_list_raw = get_x86_files()
+        install_list_dct, local_list_raw = get_x86_files(debug)
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                       \s+(?P<link_count>[0-9]+)
                                       \s+(?P<owner>\w+)
