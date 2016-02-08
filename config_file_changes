@@ -355,8 +355,8 @@ def create_backup_tar(added_file_dct, changed_file_dct, arch, force):
     pass
 
 def process_exclude_list(exclude_arg):
-    pass
-
+    exclude_list=exclude_arg.split(',')
+    return(exclude_list)
 
 
 def main(argv):
@@ -390,7 +390,9 @@ def main(argv):
         elif opt in ("-s", "--sync"):
             sync=True
         elif opt in ("-x", "--exclude"):
+            print('Exclude arg is {}'.format(arg))
             exclude_list=process_exclude_list(arg)
+            print('Exclude list is {0}'.format(exclude_list))
         else:
             print("Bug: Unhandled option")
             sys.exit()
