@@ -6,14 +6,6 @@ import re
 import os
 from pprint import pprint 
 
-# setup variables - debug(store data in local files), string lists
-install_list_dct={}
-local_list_dct={}
-added_file_dct={}
-changed_file_dct={}
-deleted_file_dct={}
-tmp_dir=None
-
 
 #To do's
 #X 1) implement arg processing
@@ -368,6 +360,14 @@ def main(argv):
             print("Bug: Unhandled option")
             sys.exit()
     
+    # setup variables - debug(store data in local files), string lists
+    install_list_dct={}
+    local_list_dct={}
+    added_file_dct={}
+    changed_file_dct={}
+    deleted_file_dct={}
+    tmp_dir=None
+
     
     
     # Collect all the file data:
