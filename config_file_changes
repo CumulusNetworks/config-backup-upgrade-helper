@@ -353,12 +353,27 @@ def get_x86_files(debug=None):
 
 def create_slotsync_conf(added_file_dct, changed_file_dct, force):
     slotsync_fn='/etc/slotsync.conf'
+    upgrade_script_fn='2x_upgrade_script'
     prev_slotsync='/etc/slotsync.bak'
     # backup the previous slotsync file if exists
     if os.path.exists(slotsync_fn):
         os.rename(slotsync_fn, prev_slotsync)
         
     slotsync_file=open(slotsync_fn, 'w')
+    
+    slotsync_file.write('## ' + slotsync_fn + '\n')
+    slotsync_file.write('''
+####################################################################
+## Configuration file for ''' + upgrade_script_fn + '''
+##
+## A list of files and directories, one per line.
+## Directories are copied recursively.
+## To explicitly exclude a file or directory, start a line with '-'.
+## Comments start with #. Uncomment examples below to enable them.
+####################################################################
+
+''')
+    
     slotsync_file.write('# Files Added since install\n')
     for added_file in sorted(added_file_dct):
         slotsync_file.write('{0}\n'.format(added_file))
