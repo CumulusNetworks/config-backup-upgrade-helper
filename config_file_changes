@@ -480,7 +480,7 @@ def usage():
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
-def parse_opts(args)
+def parse_opts(argv)
 
     try:
         opts, args = getopt.getopt(argv,"hbdfnqsvx:",["help", "backup", "backup_dir=",
@@ -521,7 +521,7 @@ def parse_opts(args)
 
 def main(argv):
     
-    parse_opts(args)
+    parse_opts(argv)
         
     # setup variables - debug(store data in local files), string lists
     install_list_dct={}
