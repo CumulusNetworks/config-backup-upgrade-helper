@@ -1,4 +1,11 @@
 #! /bin/bash
+
+## DEPRECATED due to complexities implementing in BASH
+## USE config_file_changes (python) script instead
+##
+
+
+
 tmp_d=$(mktemp -d)
 addedfilelist="Files Added since initial install"
 changedfilelist="Files Changed since initial install"
