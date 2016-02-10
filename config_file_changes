@@ -285,7 +285,7 @@ def get_x86_files(debug=None):
     #Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
     
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
-    print('tmp_dir is {0}'.format(tmp_dir))
+    print('temp dir created is {0}'.format(tmp_dir))
     subprocess.call(['sh', installer_file, 'extract', tmp_dir])
     # This doesn't work, but we may not care...
     #subprocess.call(['cd', tmp_dir])
@@ -308,6 +308,13 @@ def get_x86_files(debug=None):
                                              '--full-time',
                                              '-f', 'sysroot-release.tar.gz'],
                                              cwd=tmp_dir)
+    
+           
+    #Remove tmp_dir here to save space in case of crash
+    # comment line to debug
+    print('Deleting temp dir {0}'.format(tmp_dir))
+    shutil.rmtree(tmp_dir)
+    
     
     for install_line in install_list_raw.split('\n'):
         #if debug:
@@ -388,7 +395,7 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
         slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
-    print(slotsync_fn + 'created.')
+    print('\n' + slotsync_fn + ' created.')
     
         
 def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
@@ -413,13 +420,13 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     # Add all the files to the tarfilename
     for filename in added_file_dct:
         #copy to tmp_dir
-        subprocess.call('tar', 'rv', '-f', tarfilename, filename)
+        subprocess.call(['tar', 'rv', '-f', tarfilename, filename])
     
     for filename in changed_file_dct:
-        subprocess.call('tar', 'rv', '-f', tarfilename , filename)
+        subprocess.call(['tar', 'rv', '-f', tarfilename , filename])
 
     #Now compress it 
-    subprocess.call('gzip', tarfilename)
+    subprocess.call(['gzip', tarfilename])
     
     
     #Do I want to specify a location for the file?  could be /mnt/persist/backup-configs, could be /tmp, could be /etc
@@ -596,13 +603,6 @@ def main(argv):
             if install_filename not in local_list_dct:
                 deleted_file_dct[install_filename]="Note: File has been deleted since original binary install"
      
-       
-    #Remove tmp_dir here to save space in case of crash
-    # comment line to debug
-    if tmp_dir:
-        shutil.rmtree(tmp_dir)
-    
-    # End if arch=x86
     
     # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
     added_file_dct=check_blacklist(added_file_dct, debug)
