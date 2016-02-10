@@ -468,7 +468,8 @@ def run_slotsync_script():
 
 def usage():
     
-    print("Usage: " + sys.argv[0] + "  Determine changed config files in order to backup or sync to other slot")
+    print("Usage: " + sys.argv[0] + '[-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]')
+    print "\nDetermine changed config files. Optionally create backup archive or sync to other slot\n"
     print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
     print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
     print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
