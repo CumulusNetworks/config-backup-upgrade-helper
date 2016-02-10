@@ -230,9 +230,9 @@ def get_ppc_files():
                                                 '/mnt/root-rw/{0}/{1}'.format(slot, dirname),
                                                 '-type', 'f',
                                                 '-exec', 'ls', '-l', '--full-time', '{}', ';'])
-            except CalledProcessError:
+            except CalledProcessError as e:
                 # dir didn't exist, just skip
-                pass
+                print(e.output)
             
         
         install_list_raw=subprocess.check_output(['find',
