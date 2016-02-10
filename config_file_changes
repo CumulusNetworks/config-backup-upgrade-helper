@@ -468,6 +468,7 @@ def run_slotsync_script():
         #Verify user wants to run slotsync via Y/n input
         pass
     #
+    print('Calling ' + opt.slotsync_script + 'To copy config files to alternate slot')
     subprocess.call(opt.slotsync_script)
 
 def usage():
