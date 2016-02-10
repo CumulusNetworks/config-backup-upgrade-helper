@@ -11,21 +11,36 @@ from pprint import pformat
 
 
 #To do's
-# 2) backup archive option
 # 7) Check if root or sudo and warn/exit if not
 # 4) Call slotsync script
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
+# 10) Write readme.md file for repo with examples
+# 11) Rename, and set log file to match new name
+# 12) implement and test arch=arm
+
 
 #X 1) implement arg processing
+#X 2) backup archive option
 #X 3) Create slotsync file
 #X 6) Exclude dir list implementation
-#X 6) Refactor main into 1-2 smaller functions
-
-# Define blacklist filenames with commment data
-
+#X 8) Refactor main into 1-2 smaller functions
+#X 9) refactor main again - separate parse_opts
 
 
-def check_blacklist(file_dct, debug=None):
+class opt(object):
+    force=False
+    backup=False
+    #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
+    backup_dir='/mnt/persist/backup'
+    debug_fn='/var/log/config-archiver-debug.log'
+    debug=False
+    sync=False
+    dryrun=False
+    quiet=False
+    exclude_list=[]
+    
+
+def check_blacklist(file_dct):
     # For more detailed information refer to this User Guide document:
     #https://docs.cumulusnetworks.com/display/DOCS/Troubleshooting+the+etc+Directory
     
@@ -52,12 +67,11 @@ def check_blacklist(file_dct, debug=None):
         '/etc/lvm/backup': 'Filesystem files. Do not copy',
         '/etc/modules': 'Created during first boot.  Do not copy',
         '/etc/os-release' : 'System version data. Do not copy',
-        '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy',
-        '/etc/update-tools-debug.log': 'Debug log for this script. Do not copy'
+        '/etc/sensors.d': 'Platform specific sensor data. Created during first boot. Do not copy'
     }
     allowed_file_dct={}
-    if debug:
-        debug.write('\n------------------------------\nBlacklist Processing:\n')
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nBlacklist Processing:\n')
         
     for filename in sorted(file_dct):
         please_blacklist=None
@@ -70,11 +84,11 @@ def check_blacklist(file_dct, debug=None):
         for blacklist_name in sorted(blacklist_dct):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
-            if debug:
-                debug.write('searching: blacklist item {0}  in {1}\n'.format(blacklist_name, filename))
+            if opt.debug:
+                opt.debug.write('searching: blacklist item {0}  in {1}\n'.format(blacklist_name, filename))
             if ( re.search( blacklist_name, filename)):
-                if debug:
-                    debug.write('{0} Matches Blacklist, ignoring\n'.format(blacklist_name))
+                if opt.debug:
+                    opt.debug.write('{0} Matches Blacklist, ignoring\n'.format(blacklist_name))
                 please_blacklist=True  
                 break
             
@@ -84,9 +98,7 @@ def check_blacklist(file_dct, debug=None):
     return allowed_file_dct    
 
 
-# Define whitelist filenames with comment data
-
-def check_whitelist(file_dct, debug):
+def check_whitelist(file_dct):
     # The whitelist is only checked on files that were added since the binary was installed
     # Unlike the Blacklist, the Whitelist must match all the way to the last directory name
     # or the exact file name.
@@ -122,15 +134,15 @@ def check_whitelist(file_dct, debug):
     }
 
     whitelisted_file_dct={}
-    if debug:
-        debug.write('\n------------------------------\nWhitelist Processing:\n')
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nWhitelist Processing:\n')
 
     for filename in file_dct:
         comment=None
         if (filename.rstrip('/') in whitelist_dct) or ( os.path.dirname(filename).rstrip('/') in whitelist_dct ):
             # file or its dir is whitelisted, return a comment
-            if debug:
-                debug.write('Whitelisting: {0}\n'.format(filename))
+            if opt.debug:
+                opt.debug.write('Whitelisting: {0}\n'.format(filename))
 
             comment=whitelist_dct.get(filename,None)
             if not comment:
@@ -143,24 +155,24 @@ def check_whitelist(file_dct, debug):
     return whitelisted_file_dct
 
 
-def check_exclude_list(file_dct, exclude_list, debug=None):
+def check_exclude_list(file_dct):
     allowed_file_dct={}
         
     # The exclude list attempts a longest match.  e.g. if you add '/etc' to this list,
     #  the entire /etc dir would be excluded (i.e. don't do that)
-    if debug:
-        debug.write('\n------------------------------\nExclude List Processing:\n')
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nExclude List Processing:\n')
 
     for filename in sorted(file_dct):
         please_exclude=None
-        for exclude_name in sorted(exclude_list):
+        for exclude_name in sorted(opt.exclude_list):
             #check for longest match available in blacklist name.
             #e.g. if a dir is blacklisted, block all files in it
-            if debug:
-                debug.write('searching: Exclude list item {0}  in {1}\n'.format(exclude_name.strip().rstrip('/'), filename))
+            if opt.debug:
+                opt.debug.write('searching: Exclude list item {0}  in {1}\n'.format(exclude_name.strip().rstrip('/'), filename))
             if ( re.search( exclude_name.strip().rstrip('/'), filename)):
-                if debug:
-                    debug.write('{0} Matches Exclude list. Ignoring\n'.format(exclude_name.strip().rstrip('/')))
+                if opt.debug:
+                    opt.debug.write('{0} Matches Exclude list. Ignoring\n'.format(exclude_name.strip().rstrip('/')))
                 please_exclude=True  
                 break
             
@@ -178,22 +190,8 @@ def files_to_determine():
     /etc/bash_completion.d/*  (git, vxfldcommon, vxrdctl)
     '''
     
-def usage():
-    
-    print "Usage:  Determine changed config files in order to backup or sync to other slot"
-    print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
-    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
-    print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
-    print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
-    print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
-    print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
-    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
-    print "{0:<15}: {1}".format("-v, --debug", "Verbose: Write out debugging logs to /etc/upgrade-tool-debug.log ")    
-    print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
-    print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
-
-def get_ppc_files(debug=None):
+def get_ppc_files():
     install_list_dct={}
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
@@ -254,7 +252,7 @@ def get_ppc_files(debug=None):
     return install_list_dct, local_list_raw
 
 
-def get_x86_files(debug=None):
+def get_x86_files():
 
     install_list_dct={}    
     installer_file='/var/lib/cumulus/installer/onie-installer'
@@ -314,14 +312,13 @@ def get_x86_files(debug=None):
     
            
     #Remove tmp_dir here to save space in case of crash
-    # comment line to debug
     print('Deleting temp dir {0}\n'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
     
     for install_line in install_list_raw.split('\n'):
-        #if debug:
-        #    debug.write('Processing install line {}\n'.format(install_line))
+        #if opt.debug:
+        #    opt.debug.write('Processing install line {}\n'.format(install_line))
             
         match=install_file_pattern.match(install_line)
         if match:
@@ -348,9 +345,9 @@ def get_x86_files(debug=None):
             print('Line: #'+install_line+'#')
             print('Decide what to do here... exit or continue')
             
-    if debug:
-        debug.write('--------------------------\ninstall_list_dct:\n')
-        debug.write(pformat(install_list_dct))
+    if opt.debug:
+        opt.debug.write('--------------------------\ninstall_list_dct:\n')
+        opt.debug.write(pformat(install_list_dct))
     
     # find all files in /etc /home /root in locally installed files and store
     local_list_raw=subprocess.check_output(['find',
@@ -364,6 +361,7 @@ def get_x86_files(debug=None):
     
     # End get_x86_files()
     return install_list_dct, local_list_raw
+
 
 def create_slotsync_conf(added_file_dct, changed_file_dct):
     slotsync_fn='/etc/slotsync.conf'
@@ -401,7 +399,7 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
     print('\n' + slotsync_fn + ' created.')
     
         
-def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
+def create_backup_tar(added_file_dct, changed_file_dct):
     #mktemp dir
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -439,48 +437,51 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     
     #Do I want to specify a location for the file?  could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     # Make the backup_dir if is doesn't exist
-    if not os.path.exists(backup_dir):
-        os.makedirs(backup_dir)
+    if not os.path.exists(opt.backup_dir):
+        os.makedirs(opt.backup_dir)
 
     # need to check space
-    print('Checking space on {0}'.format(backup_dir))
-    statvfs=os.statvfs(backup_dir)
+    print('Checking space on {0}'.format(opt.backup_dir))
+    statvfs=os.statvfs(opt.backup_dir)
     free=statvfs.f_frsize * statvfs.f_bfree
     tarfileinfo=os.stat(tarfilename)
     if tarfileinfo.st_size > free:
-        print('Error: {0} filesystem does not have enough free space to store tar file'.format(backup_dir))
+        print('Error: {0} filesystem does not have enough free space to store tar file'.format(opt.backup_dir))
         print('Free space: {0} {1} size: {2}'.format(free, tarfilename, tarfileinfo.st_size))
         sys.exit(1)
 
     # Copy the tarfile to the backup_dir
-    print('Copying tarfile to {0}/{1}'.format(backup_dir, tarfilename))
-    shutil.copy(tarfilename, backup_dir)
+    print('Copying tarfile to {0}/{1}'.format(opt.backup_dir, tarfilename))
+    shutil.copy(tarfilename, opt.backup_dir)
     
     print('Removing temp dir {0}'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
 
-def process_exclude_list(exclude_arg):
-    exclude_list=exclude_arg.split(',')
-    return(exclude_list)
-
-def run_slotsync_script(force):
+def run_slotsync_script():
     pass
+    if opt.force:
+        #skip any input
+        pass
 
 
-def main(argv):
+def usage():
     
-    force=False
-    backup=False
-    #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
-    backup_dir='/mnt/persist/backup'
-    debug_fn='/etc/upgrade-tool-debug.log'
-    debug=False
-    sync=False
-    dryrun=False
-    quiet=False
-    exclude_list=[]
-    
+    print "Usage:  Determine changed config files in order to backup or sync to other slot"
+    print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
+    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
+    print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
+    print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
+    print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
+    print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
+    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    print "{0:<15}: {1}".format("-v, --debug", "Verbose: Write out debugging logs to /etc/upgrade-tool-debug.log ")    
+    print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
+    print "{0:<15}: {1}".format("-h, --help", "Show this message")
+
+
+def parse_opts(args)
+
     try:
         opts, args = getopt.getopt(argv,"hbdfnqsvx:",["help", "backup", "backup_dir=",
                                                       "debug", "force", "dryrun",
@@ -488,32 +489,40 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
-    for opt, arg in opts:
+    for opt_arg, arg in opts:
         if opt in ('-h', '--help'):
             usage()
             sys.exit()
-        elif opt in ("-b", "--backup"):
-            backup=True
-        elif opt in ("-d", "--backup_dir"):
-            backup_dir=arg
-        elif opt in ("-v", "--debug"):
-            debug=open(debug_fn, 'w')
-        elif opt in ("-f", "--force"):
-            force=True 
-        elif opt in ("-n", "--dryrun"):
-            dryrun=True
-        elif opt in ("-q", "--quiet"):
-            quiet=True
-        elif opt in ("-s", "--sync"):
-            sync=True
-        elif opt in ("-x", "--exclude"):
+        elif opt_arg in ("-b", "--backup"):
+            opt.backup=True
+        elif opt_arg in ("-d", "--backup_dir"):
+            opt.backup_dir=arg
+        elif opt_arg in ("-v", "--debug"):
+            opt.debug=open(opt.debug_fn, 'w')
+        elif opt_arg in ("-f", "--force"):
+            opt.force=True 
+        elif opt_arg in ("-n", "--dryrun"):
+            opt.dryrun=True
+        elif opt_arg in ("-q", "--quiet"):
+            opt.quiet=True
+        elif opt_arg in ("-s", "--sync"):
+            opt.sync=True
+        elif opt_arg in ("-x", "--exclude"):
             #print('Exclude arg is {}'.format(arg))
-            exclude_list=process_exclude_list(arg)
+            opt.exclude_list=exclude_arg.split(',')
             #print('Exclude list is {0}'.format(exclude_list))
         else:
             print("Bug: Unhandled option")
             sys.exit(1)
+
+    if opt.debug and not opt.quiet:
+        print('Created debug log file {0}'.format(opt.debug_fn))
     
+
+def main(argv):
+    
+    parse_opts(args)
+        
     # setup variables - debug(store data in local files), string lists
     install_list_dct={}
     local_list_dct={}
@@ -523,17 +532,12 @@ def main(argv):
     tmp_dir=None
     blank_line_pattern=re.compile('^\W*$')
 
-    if debug and not quiet:
-        print('Creating debug log file {0}'.format(debug_fn))
-    
     # Collect all the file data:
-    # find and extract install file based on arch
-    
-    # run uname -a
+    # find and extract install file based on arch in uname -a
     arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
     
     if arch == "ppc":
-        install_list_dct, local_list_raw = get_ppc_files(debug)
+        install_list_dct, local_list_raw = get_ppc_files()
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -545,10 +549,6 @@ def main(argv):
                                     \s+(?P<timezone>[\+\-0-9]+)
                                     \s+
                                     '''+'/mnt/root\-rw/'+slot+'(?P<filename>\S+)', re.X)
-
-     
-     
-       # End if arch=ppc
        
        
     if arch == 'arm':
@@ -557,7 +557,7 @@ def main(argv):
      
     
     if arch == 'x86_64':
-        install_list_dct, local_list_raw = get_x86_files(debug)
+        install_list_dct, local_list_raw = get_x86_files()
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                       \s+(?P<link_count>[0-9]+)
                                       \s+(?P<owner>\w+)
@@ -602,15 +602,15 @@ def main(argv):
             print('Local Line: #'+local_line+'#')
             print('Decide what to do here... exit or continue')
      
-    if debug:
-        debug.write('\n------------------------------\nTemp added file list:\n')
-        debug.write(pformat(added_file_dct))
-        debug.write('\n------------------------------\nTemp changed file list:\n')
-        debug.write(pformat(changed_file_dct))
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nTemp added file list:\n')
+        opt.debug.write(pformat(added_file_dct))
+        opt.debug.write('\n------------------------------\nTemp changed file list:\n')
+        opt.debug.write(pformat(changed_file_dct))
     
     # Cannot determine this on ppc, so only check x86
     # Loop through installed files and flag any files that have been deleted
-    # This may be a pointless exercise and can be safely removed
+    # This may be a pointless exercise and probably can be safely removed
     if arch=='x86_64':
         for install_filename in sorted(install_list_dct):
             if install_filename not in local_list_dct:
@@ -618,23 +618,23 @@ def main(argv):
      
     
     # Loop through adds and compare to blacklist, whitelist.  Mark others as 3rd party
-    added_file_dct=check_blacklist(added_file_dct, debug)
-    added_file_dct=check_exclude_list(added_file_dct, exclude_list, debug)
-    added_file_dct=check_whitelist(added_file_dct, debug)
+    added_file_dct=check_blacklist(added_file_dct)
+    added_file_dct=check_exclude_list(added_file_dct)
+    added_file_dct=check_whitelist(added_file_dct)
     
     # Loop through changes and compare to blacklist
-    changed_file_dct=check_blacklist(changed_file_dct, debug)
-    changed_file_dct=check_exclude_list(changed_file_dct, exclude_list, debug)
+    changed_file_dct=check_blacklist(changed_file_dct)
+    changed_file_dct=check_exclude_list(changed_file_dct)
     # The only reason to check changed files against whitelist is to mark them with comments.
     # if they were changed and not blacklisted, they are important
-    changed_file_dct=check_whitelist(changed_file_dct, debug)
+    changed_file_dct=check_whitelist(changed_file_dct)
     
     
     # Loop through deletes and compare to blacklist, whitelist
     # No need at this time
     
     # output results to screen and a slotsync.conf file
-    if not quiet:
+    if not opt.quiet:
         print('Files Added since initial install:')
         for filename in sorted(added_file_dct):
             print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
@@ -649,17 +649,17 @@ def main(argv):
             for filename in sorted(deleted_file_dct):
                 print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
-    if sync and not dryrun:
+    if opt.sync and not opt.dryrun:
         create_slotsync_conf(added_file_dct, changed_file_dct)
         
-    if backup and not dryrun:
-        create_backup_tar(added_file_dct, changed_file_dct, backup_dir)
+    if opt.backup and not opt.dryrun:
+        create_backup_tar(added_file_dct, changed_file_dct)
 
-    if debug:
-        debug.close()
+    if opt.debug:
+        opt.debug.close()
 
-    if sync and not dryrun:
-        run_slotsync_script(force)
+    if opt.sync and not opt.dryrun:
+        run_slotsync_script()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
