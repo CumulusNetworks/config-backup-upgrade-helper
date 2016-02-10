@@ -443,6 +443,7 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
         os.makedirs(backup_dir)
 
     # need to check space
+    print('Checking space on {0}'.format(backup_dir))
     statvfs=os.statvfs(backup_dir)
     free=statvfs.f_frsize * statvfs.f_bfree
     tarfileinfo=os.stat(tarfilename)
