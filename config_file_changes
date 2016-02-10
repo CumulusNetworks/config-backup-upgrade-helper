@@ -494,10 +494,10 @@ def parse_opts():
                                                       "debug", "force", "dryrun",
                                                       "quiet", "sync", "exclude="])
     except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+        print("Bug: Unhandled option")
+        sys.exit(1)
     for opt_arg, arg in opts:
-        if opt in ('-h', '--help'):
+        if opt_arg in ('-h', '--help'):
             usage()
             sys.exit()
         elif opt_arg in ("-b", "--backup"):
@@ -519,8 +519,8 @@ def parse_opts():
             opt.exclude_list=arg.split(',')
             #print('Exclude list is {0}'.format(exclude_list))
         else:
-            print("Bug: Unhandled option")
-            sys.exit(1)
+            usage()
+            sys.exit(2)
 
     if opt.debug and not opt.quiet:
         print('Created debug log file {0}'.format(opt.debug_fn))
