@@ -388,7 +388,7 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
         slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
-    print(slotsync_file + 'created.')
+    print(slotsync_fn + 'created.')
     
         
 def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
@@ -454,6 +454,7 @@ def main(argv):
     backup=False
     #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     backup_dir='/mnt/persist/backup'
+    debug_fn='/etc/upgrade-tool-debug.log'
     debug=False
     sync=False
     dryrun=False
@@ -476,7 +477,7 @@ def main(argv):
         elif opt in ("-d", "--backup_dir"):
             backup_dir=arg
         elif opt in ("-v", "--debug"):
-            debug=open('/etc/upgrade-tool-debug.log', 'w')
+            debug=open(debug_fn, 'w')
         elif opt in ("-f", "--force"):
             force=True 
         elif opt in ("-n", "--dryrun"):
@@ -503,7 +504,7 @@ def main(argv):
     blank_line_pattern=re.compile('^\W*$')
 
     if debug and not quiet:
-        print('Creating debug log file in /etc/update-tools-debug.log')
+        print('Creating debug log file {0}'.format(debug_fn))
     
     # Collect all the file data:
     # find and extract install file based on arch
