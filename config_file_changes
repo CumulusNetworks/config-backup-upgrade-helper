@@ -222,6 +222,7 @@ def get_ppc_files():
     if match:
         slot='config{}'.format(match.group('slot'))
         # find all files in /etc /home /root in locally installed files and store
+        # Note that links are not supported and will have to be recreated manually on the other side if needed
         #find /etc /home /root -type f -exec ls -l --full-time {} \;
         for dirname in ['etc', 'home', 'root']:
             try:
@@ -229,10 +230,11 @@ def get_ppc_files():
                 local_list_raw=local_list_raw + subprocess.check_output(['find',
                                                 '/mnt/root-rw/{0}/{1}'.format(slot, dirname),
                                                 '-type', 'f',
-                                                '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+                                                '-exec', 'ls', '-la', '--full-time', '{}', ';'])
             except subprocess.CalledProcessError as e:
                 # dir didn't exist, just skip
-                print(e.output)
+                #print(e.output)
+                pass
             
         
         install_list_raw=subprocess.check_output(['find',
@@ -479,6 +481,17 @@ def run_slotsync_script():
     print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
     subprocess.call(opt.slotsync_script)
 
+
+def fixup_lldp_quagga():
+    pass
+    #sudo chown _lldpd /usr/bin/lldpcli
+    #sudo service restart
+    #sudo chown quagga:quagga /var/log/quagga
+    
+    
+def check_if_root_or_sudo():
+    pass
+
 def usage():
     
     print("Usage: " + sys.argv[0] + '[-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]')
@@ -539,6 +552,8 @@ def parse_opts():
     
 
 def main():
+    
+    check_if_root_or_sudo()
     
     parse_opts()
         
@@ -680,6 +695,9 @@ def main():
 
     if opt.sync and not opt.dryrun:
         run_slotsync_script()
+        
+    fixup_lldp_quagga()
+    
 
 if __name__ == '__main__':
     main()
