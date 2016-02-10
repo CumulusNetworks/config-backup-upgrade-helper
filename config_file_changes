@@ -298,7 +298,7 @@ def get_x86_files(debug=None):
     tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
        --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
     '''
-    print('Processing install archive\n')
+    print('\nProcessing install archive\n')
     install_list_raw=subprocess.check_output(['tar', '-t', '-v',
                                              '--exclude=bin',
                                              '--exclude=boot',
@@ -424,11 +424,11 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     print('Adding to config archive:  Files Added since initial install')
     for filename in added_file_dct:
         #copy to tmp_dir
-        subprocess.call(['tar', 'r', '-f', tarfilename, filename])
+        subprocess.call(['tar', '-r', '-P', '-f', tarfilename, filename])
     
     print('Adding to config archive:  Files Changed since initial install')
     for filename in changed_file_dct:
-        subprocess.call(['tar', 'r', '-f', tarfilename , filename])
+        subprocess.call(['tar', 'r-', '-P', '-f', tarfilename , filename])
 
 
     #Now compress it
@@ -461,6 +461,9 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
 def process_exclude_list(exclude_arg):
     exclude_list=exclude_arg.split(',')
     return(exclude_list)
+
+def run_slotsync_script(force):
+    pass
 
 
 def main(argv):
