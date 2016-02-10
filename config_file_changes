@@ -511,7 +511,7 @@ def parse_opts():
             opt.sync=True
         elif opt_arg in ("-x", "--exclude"):
             #print('Exclude arg is {}'.format(arg))
-            opt.exclude_list=exclude_arg.split(',')
+            opt.exclude_list=arg.split(',')
             #print('Exclude list is {0}'.format(exclude_list))
         else:
             print("Bug: Unhandled option")
