@@ -39,7 +39,7 @@ class opt(object):
     dryrun=False
     quiet=False
     exclude_list=[]
-    slotsync_script='/root/2x_upgrade_script'
+    slotsync_script='./slotsync'
     
 
 def check_blacklist(file_dct):
@@ -463,12 +463,12 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     
 
 def run_slotsync_script():
-    pass
+    
     if not opt.force:
         #Verify user wants to run slotsync via Y/n input
         pass
     #
-    print('Calling ' + opt.slotsync_script + 'To copy config files to alternate slot')
+    print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
     subprocess.call(opt.slotsync_script)
 
 def usage():
