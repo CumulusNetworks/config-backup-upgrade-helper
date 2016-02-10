@@ -198,6 +198,7 @@ def files_to_determine():
 
 def get_ppc_files():
     install_list_dct={}
+    local_list_raw=''
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -221,12 +222,18 @@ def get_ppc_files():
     if match:
         slot='config{}'.format(match.group('slot'))
         # find all files in /etc /home /root in locally installed files and store
-        local_list_raw=subprocess.check_output(['find',
-                                                '/mnt/root-rw/{0}/etc'.format(slot),
-                                                '/mnt/root-rw/{0}/home'.format(slot),
-                                                '/mnt/root-rw/{0}/root'.format(slot),
+        #find /etc /home /root -type f -exec ls -l --full-time {} \;
+        for dirname in ['etc', 'home', 'root']:
+            try:
+        
+                local_list_raw=local_list_raw + subprocess.check_output(['find',
+                                                '/mnt/root-rw/{0}/{1}'.format(slot, dirname),
                                                 '-type', 'f',
                                                 '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+            except CalledProcessError:
+                # dir didn't exist, just skip
+                pass
+            
         
         install_list_raw=subprocess.check_output(['find',
                                                 '/mnt/root-ro/etc',
