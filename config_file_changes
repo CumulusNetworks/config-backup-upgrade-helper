@@ -46,6 +46,7 @@ def check_blacklist(file_dct, debug=None):
         '/etc/default/phy_ucode_update': 'Created during first boot.  Do not copy',
         '/etc/init': 'Platform initialization files. Do not copy',
         '/etc/init.d': 'Platform initialization files.  Do not copy',
+        '/etc/fstab': 'Static info on filesystem. Do not copy',
         '/etc/lsb-release' : 'System version data.  Do not copy',
         '/etc/lvm/archive': 'Filesystem files.  Do not copy',
         '/etc/lvm/backup': 'Filesystem files. Do not copy',
@@ -104,6 +105,7 @@ def check_whitelist(file_dct, debug):
         '/etc/cumulus/ssmonitor.d': 'jdoo config files for daemon monitoring',
         '/etc/default/isc-dhcp-relay' : 'DHCP relay config file',
         '/etc/hostname' : 'Hostname file.  May be set manually here or via DHCP',
+        '/etc/hosts' : 'Static list of host to ip address mapping',
         '/etc/motd' : 'Message of the day',
         '/etc/nsswitch.conf' : '',
         '/etc/network': 'All the config for the switch interfaces',
@@ -286,6 +288,7 @@ def get_x86_files(debug=None):
     
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     print('temp dir created is {0}'.format(tmp_dir))
+    print('\nExtracting initial install file\n')
     subprocess.call(['sh', installer_file, 'extract', tmp_dir])
     # This doesn't work, but we may not care...
     #subprocess.call(['cd', tmp_dir])
@@ -295,7 +298,7 @@ def get_x86_files(debug=None):
     tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
        --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
     '''
-    
+    print('Processing install archive\n')
     install_list_raw=subprocess.check_output(['tar', '-t', '-v',
                                              '--exclude=bin',
                                              '--exclude=boot',
@@ -312,7 +315,7 @@ def get_x86_files(debug=None):
            
     #Remove tmp_dir here to save space in case of crash
     # comment line to debug
-    print('Deleting temp dir {0}'.format(tmp_dir))
+    print('Deleting temp dir {0}\n'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
     
@@ -403,7 +406,7 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
     tarfilename=os.path.join(tmp_dir, 'config-archive-' + datestamp +'.tar')
-    print('Creating Config archive:' + tarfilename)
+    print('\nCreating Config archive: ' + tarfilename)
 
     # 
     #copy files to temp_dir?  or just add file to tar
@@ -418,15 +421,20 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     
     
     # Add all the files to the tarfilename
+    print('Adding to config archive:  Files Added since initial install')
     for filename in added_file_dct:
         #copy to tmp_dir
-        subprocess.call(['tar', 'rv', '-f', tarfilename, filename])
+        subprocess.call(['tar', 'r', '-f', tarfilename, filename])
     
+    print('Adding to config archive:  Files Changed since initial install')
     for filename in changed_file_dct:
-        subprocess.call(['tar', 'rv', '-f', tarfilename , filename])
+        subprocess.call(['tar', 'r', '-f', tarfilename , filename])
 
-    #Now compress it 
+
+    #Now compress it
+    print('Compressing tarfile to {0}.gz'.format(tarfilename))
     subprocess.call(['gzip', tarfilename])
+    tarfilename='{0}.gz'.format(tarfilename)
     
     
     #Do I want to specify a location for the file?  could be /mnt/persist/backup-configs, could be /tmp, could be /etc
@@ -444,7 +452,7 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
         sys.exit(1)
 
     # Copy the tarfile to the backup_dir
-    shutil.copy('{0}.gz'.format(tarfilename), backup_dir)
+    shutil.copy(tarfilename, backup_dir)
     
     #remove tmp_dir
     shutil.rmtree(tmp_dir)
