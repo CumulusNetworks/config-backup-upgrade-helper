@@ -17,6 +17,7 @@ from pprint import pformat
 # 10) Write readme.md file for repo with examples
 # 11) Rename, and set log file to match new name
 # 12) implement and test arch=arm
+# 13) refactor debugging to use log facility?
 
 
 #X 1) implement arg processing
@@ -32,7 +33,7 @@ class opt(object):
     backup=False
     #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     backup_dir='/mnt/persist/backup'
-    debug_fn='/var/log/config-archiver-debug.log'
+    debug_fn='/var/log/' + sys.argv[0] + '.log'
     debug=False
     sync=False
     dryrun=False
@@ -467,7 +468,7 @@ def run_slotsync_script():
 
 def usage():
     
-    print "Usage:  Determine changed config files in order to backup or sync to other slot"
+    print("Usage: " + sys.argv[0] + "  Determine changed config files in order to backup or sync to other slot")
     print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
     print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
     print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
@@ -480,10 +481,10 @@ def usage():
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
-def parse_opts(argv)
+def parse_opts()
 
     try:
-        opts, args = getopt.getopt(argv,"hbdfnqsvx:",["help", "backup", "backup_dir=",
+        opts, args = getopt.getopt(sys.argv[1:],"hbdfnqsvx:",["help", "backup", "backup_dir=",
                                                       "debug", "force", "dryrun",
                                                       "quiet", "sync", "exclude="])
     except getopt.GetoptError:
@@ -519,9 +520,9 @@ def parse_opts(argv)
         print('Created debug log file {0}'.format(opt.debug_fn))
     
 
-def main(argv):
+def main():
     
-    parse_opts(argv)
+    parse_opts()
         
     # setup variables - debug(store data in local files), string lists
     install_list_dct={}
@@ -662,5 +663,5 @@ def main(argv):
         run_slotsync_script()
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
     
