@@ -33,6 +33,7 @@ class opt(object):
     backup=False
     #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     backup_dir='/mnt/persist/backup'
+    create=False
     debug_fn='/var/log/' + sys.argv[0] + '.log'
     debug=False
     sync=False
@@ -477,6 +478,7 @@ def usage():
     print "\nDetermine changed config files. Optionally create backup archive or sync to other slot\n"
     print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
     print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
+    print "{0:<15}: {1}".format("-c, --create", "Create /etc/slotsync.conf - but don't call slotsync")
     print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
     print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
@@ -502,6 +504,8 @@ def parse_opts():
             sys.exit()
         elif opt_arg in ("-b", "--backup"):
             opt.backup=True
+        elif opt_arg in ("-c", "--create"):
+            opt.create=True
         elif opt_arg in ("-d", "--backup_dir"):
             opt.backup_dir=arg
         elif opt_arg in ("-v", "--debug"):
@@ -513,6 +517,7 @@ def parse_opts():
         elif opt_arg in ("-q", "--quiet"):
             opt.quiet=True
         elif opt_arg in ("-s", "--sync"):
+            opt.create=True
             opt.sync=True
         elif opt_arg in ("-x", "--exclude"):
             #print('Exclude arg is {}'.format(arg))
@@ -657,7 +662,7 @@ def main():
             for filename in sorted(deleted_file_dct):
                 print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
-    if opt.sync and not opt.dryrun:
+    if opt.create and not opt.dryrun:
         create_slotsync_conf(added_file_dct, changed_file_dct)
         
     if opt.backup and not opt.dryrun:
