@@ -481,7 +481,7 @@ def usage():
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
 
-def parse_opts()
+def parse_opts():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],"hbdfnqsvx:",["help", "backup", "backup_dir=",
