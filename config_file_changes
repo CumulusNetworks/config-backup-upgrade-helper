@@ -4,6 +4,8 @@ import sys, getopt
 import subprocess
 import re
 import os
+import time
+import shutil
 from pprint import pprint 
 from pprint import pformat
 
@@ -178,11 +180,13 @@ def usage():
     
     print "Usage:  Determine changed config files in order to backup or sync to other slot"
     print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
-    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files")
+    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
+    print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
     print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
     print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
     print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    print "{0:<15}: {1}".format("-v, --debug", "Verbose: Write out debugging logs to /etc/upgrade-tool-debug.log ")    
     print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
@@ -351,7 +355,7 @@ def get_x86_files(debug=None):
     # End get_x86_files()
     return install_list_dct, local_list_raw
 
-def create_slotsync_conf(added_file_dct, changed_file_dct, force):
+def create_slotsync_conf(added_file_dct, changed_file_dct):
     slotsync_fn='/etc/slotsync.conf'
     upgrade_script_fn='2x_upgrade_script'
     prev_slotsync='/etc/slotsync.bak'
@@ -384,10 +388,60 @@ def create_slotsync_conf(added_file_dct, changed_file_dct, force):
         slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
+    print(slotsync_file + 'created.')
     
         
-def create_backup_tar(added_file_dct, changed_file_dct, arch, force):
-    pass
+def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
+    #mktemp dir
+    tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
+    datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
+    tarfilename=os.path.join(tmp_dir, 'config-archive-' + datestamp +'.tar')
+    print('Creating Config archive:' + tarfilename)
+
+    # 
+    #copy files to temp_dir?  or just add file to tar
+    #Either of these methods would work:
+    #for file in list:
+    #  cp --parents {file} {tmp_dir}/
+    #tar cv -f {tmp_dir}/foo.tar -C tmp_dir  etc/network/interfaces
+    #
+    #  or  (this one thrashes the disk less)
+    #for file in list:
+    #  tar rv -f {tmp_dir}/foo.tar filename
+    
+    
+    # Add all the files to the tarfilename
+    for filename in added_file_dct:
+        #copy to tmp_dir
+        subprocess.call('tar', 'rv', '-f', tarfilename, filename)
+    
+    for filename in changed_file_dct:
+        subprocess.call('tar', 'rv', '-f', tarfilename , filename)
+
+    #Now compress it 
+    subprocess.call('gzip', tarfilename)
+    
+    
+    #Do I want to specify a location for the file?  could be /mnt/persist/backup-configs, could be /tmp, could be /etc
+    # Make the backup_dir if is doesn't exist
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+
+    # need to check space
+    statvfs=os.statvfs(backup_dir)
+    free=statvfs.f_frsize * statvfs.f_bfree
+    tarfileinfo=os.stat(tarfilename)
+    if tarfileinfo.st_size > free:
+        print('Error: {0} filesystem does not have enough free space to store tar file'.format(backup_dir))
+        print('Free space: {0} {1} size: {2}'.format(free, tarfilename, tarfileinfo.st_size))
+        sys.exit(1)
+
+    # Copy the tarfile to the backup_dir
+    shutil.copy('{0}.gz'.format(tarfilename), backup_dir)
+    
+    #remove tmp_dir
+    shutil.rmtree(tmp_dir)
+    
 
 def process_exclude_list(exclude_arg):
     exclude_list=exclude_arg.split(',')
@@ -398,6 +452,8 @@ def main(argv):
     
     force=False
     backup=False
+    #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
+    backup_dir='/mnt/persist/backup'
     debug=False
     sync=False
     dryrun=False
@@ -405,9 +461,9 @@ def main(argv):
     exclude_list=[]
     
     try:
-        opts, args = getopt.getopt(argv,"hbdfnqsx:",["help", "backup", "debug",
-                                                     "force", "dryrun", "quiet",
-                                                     "sync", "exclude="])
+        opts, args = getopt.getopt(argv,"hbdfnqsvx:",["help", "backup", "backup_dir=",
+                                                      "debug", "force", "dryrun",
+                                                      "quiet", "sync", "exclude="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -417,9 +473,10 @@ def main(argv):
             sys.exit()
         elif opt in ("-b", "--backup"):
             backup=True
-        elif opt in ("-d", "--debug"):
-            debug=open('/etc/update-tools-debug.log', 'w')
-            
+        elif opt in ("-d", "--backup_dir"):
+            backup_dir=arg
+        elif opt in ("-v", "--debug"):
+            debug=open('/etc/upgrade-tool-debug.log', 'w')
         elif opt in ("-f", "--force"):
             force=True 
         elif opt in ("-n", "--dryrun"):
@@ -429,12 +486,12 @@ def main(argv):
         elif opt in ("-s", "--sync"):
             sync=True
         elif opt in ("-x", "--exclude"):
-            print('Exclude arg is {}'.format(arg))
+            #print('Exclude arg is {}'.format(arg))
             exclude_list=process_exclude_list(arg)
-            print('Exclude list is {0}'.format(exclude_list))
+            #print('Exclude list is {0}'.format(exclude_list))
         else:
             print("Bug: Unhandled option")
-            sys.exit()
+            sys.exit(1)
     
     # setup variables - debug(store data in local files), string lists
     install_list_dct={}
@@ -542,7 +599,7 @@ def main(argv):
     #Remove tmp_dir here to save space in case of crash
     # comment line to debug
     if tmp_dir:
-        subprocess.call(['rm', '-rf', tmp_dir])
+        shutil.rmtree(tmp_dir)
     
     # End if arch=x86
     
@@ -579,13 +636,16 @@ def main(argv):
                 print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
     if sync and not dryrun:
-        create_slotsync_conf(added_file_dct, changed_file_dct, force)
+        create_slotsync_conf(added_file_dct, changed_file_dct)
         
     if backup and not dryrun:
-        create_backup_tar(added_file_dct, changed_file_dct, arch, force)
+        create_backup_tar(added_file_dct, changed_file_dct, backup_dir)
 
     if debug:
         debug.close()
+
+    if sync and not dryrun:
+        run_slotsync_script(force)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
