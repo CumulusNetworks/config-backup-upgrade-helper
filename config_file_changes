@@ -428,7 +428,7 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
     
     print('Adding to config archive:  Files Changed since initial install')
     for filename in changed_file_dct:
-        subprocess.call(['tar', 'r-', '-P', '-f', tarfilename , filename])
+        subprocess.call(['tar', '-r', '-P', '-f', tarfilename , filename])
 
 
     #Now compress it
@@ -452,9 +452,10 @@ def create_backup_tar(added_file_dct, changed_file_dct, backup_dir):
         sys.exit(1)
 
     # Copy the tarfile to the backup_dir
+    print('Copying tarfile to {0}/{1}'.format(backup_dir, tarfilename))
     shutil.copy(tarfilename, backup_dir)
     
-    #remove tmp_dir
+    print('Removing temp dir {0}'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
 
