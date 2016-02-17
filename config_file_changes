@@ -475,7 +475,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
 
 def run_slotsync_script():
     
-    no_list("n", "N")
+    no_list = ["n", "N"]
     
     if not opt.force:
         #Verify user wants to run slotsync via Y/n input
