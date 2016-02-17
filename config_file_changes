@@ -134,7 +134,7 @@ def check_whitelist(file_dct):
         '/etc/shadow' : 'System password file',
         '/etc/ssh' : 'ssh config files',
         '/etc/sysctl.d' : 'sysctl control options',
-        '/etc/slotsync.conf': 'upgrade tool control file to copy config files to alternate slot.  Optionally created by this script',
+        '/etc/slotsync.conf': 'control file to copy config files to alt slot. Created by this script',
         '/home' : 'home directories for users',
         '/root' : 'root user home directory'
     }
