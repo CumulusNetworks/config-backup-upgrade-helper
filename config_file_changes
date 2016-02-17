@@ -8,6 +8,7 @@ import time
 import shutil
 from pprint import pprint 
 from pprint import pformat
+from sys import version_info
 
 
 #To do's
@@ -474,16 +475,27 @@ def create_backup_tar(added_file_dct, changed_file_dct):
 
 def run_slotsync_script():
     
+    no_list("n", "N")
+    
     if not opt.force:
         #Verify user wants to run slotsync via Y/n input
-        pass
+        py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
+        if py3:
+            response = input("Do you wish to sync these files to the alternate slot now? (Y/n):")
+        else:
+            response = raw_input("Do you wish to sync these files to the alternate slot now? (Y/n): ")
+        
+        if response in no_list:
+            print("Files will not be synced to the alternate slot")
+            return
     #
     print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
-    subprocess.call(opt.slotsync_script)
+    print('Not calling: subprocess.call(opt.slotsync_script)')
 
 
 def fixup_lldp_quagga():
     pass
+    # look in cl-img-install -u code for files to run on first boot and put this there...
     #sudo chown _lldpd /usr/bin/lldpcli
     #sudo service restart
     #sudo chown quagga:quagga /var/log/quagga
@@ -565,6 +577,11 @@ def main():
     deleted_file_dct={}
     tmp_dir=None
     blank_line_pattern=re.compile('^\W*$')
+
+
+    #Testing input logic
+    run_slotsync_script()
+    exit()
 
     # Collect all the file data:
     # find and extract install file based on arch in uname -a
