@@ -491,7 +491,7 @@ def run_slotsync_script():
                 return
     #
     print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
-    print('Not calling: subprocess.call(opt.slotsync_script)')
+    subprocess.call(opt.slotsync_script)
 
 
 def fixup_lldp_quagga():
