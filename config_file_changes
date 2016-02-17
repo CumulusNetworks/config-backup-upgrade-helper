@@ -579,11 +579,6 @@ def main():
     tmp_dir=None
     blank_line_pattern=re.compile('^\W*$')
 
-
-    #Testing input logic
-    run_slotsync_script()
-    exit()
-
     # Collect all the file data:
     # find and extract install file based on arch in uname -a
     arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
@@ -689,12 +684,12 @@ def main():
     if not opt.quiet:
         print('Files Added since initial install:')
         for filename in sorted(added_file_dct):
-            print('{0:<40}# {1}'.format(filename, added_file_dct[filename]))
+            print('{0:<40}{1}# {2}'.format(filename, local_list_dct[filename]['datetime'], added_file_dct[filename]))
 
         print('')
         print('Files Changed since initial install:')
         for filename in sorted(changed_file_dct):
-            print('{0:<40}# {1}'.format(filename, changed_file_dct[filename]))
+            print('{0:<40}{1}# {2}'.format(filename, local_list_dct[filename]['datetime'], changed_file_dct[filename]))
            
         if arch=='x86_64':    
             print('')
