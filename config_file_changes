@@ -206,13 +206,15 @@ def clean_mnt_persist():
     # so we need to clean out al files in /mnt/persist except license files
     # and /mnt/persist/backup/ since we are storing archive files there
     yes_list = ["y", "Y"]
-
+    
     # Need to create logging here for when run via ansible with --force option
     print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
     print('Only license files and backup config archives should be stored in /mnt/persist')
     print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
     print('Only license files and backup archive files will be preserved.')
     print('The following files, and any empty directories will be deleted:')
+    sys.stdout.flush()
+    
     subprocess.call(['find', '/mnt/persist/', '-depth',
                      '-path', '/mnt/persist/etc/cumulus/.license*',
                      '-o', '-path', '/mnt/persist/backup/*',
@@ -230,13 +232,13 @@ def clean_mnt_persist():
             if response.lstrip()[0] not in yes_list:
                 print("Files in /mnt/persist not removed.  Proceed with caution")
                 return
-
+    
     # -depth - list dirs after files contained in them
     # this is used at end of recipe to delete the empty dirs after files in them are removed
     # ignore license files and the files in the backup dir
     # ignore directories (only list files) and delete all files not ignored previously
     # then go back and delete any empty dirs after removing files (see -depth)
-
+    
     subprocess.call(['find', '/mnt/persist/', '-depth',
                      '-path', '/mnt/persist/etc/cumulus/.license*',
                      '-o', '-path', '/mnt/persist/backup/*',
