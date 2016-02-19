@@ -42,6 +42,7 @@ class opt(object):
     quiet=False
     exclude_list=[]
     slotsync_script='./slotsync'
+    slotsync_conf='/etc/slotsync.conf'
     
 
 def check_blacklist(file_dct):
@@ -423,19 +424,17 @@ def get_x86_files():
 
 
 def create_slotsync_conf(added_file_dct, changed_file_dct):
-    slotsync_fn='/etc/slotsync.conf'
-    upgrade_script_fn='2x_upgrade_script'
-    prev_slotsync='/etc/slotsync.bak'
+    prev_slotsync=opt.slotsync_conf.split('.')[0]+'.bak'
     # backup the previous slotsync file if exists
-    if os.path.exists(slotsync_fn):
-        os.rename(slotsync_fn, prev_slotsync)
+    if os.path.exists(opt.slotsync_conf):
+        os.rename(opt.slotsync_conf, prev_slotsync)
         
-    slotsync_file=open(slotsync_fn, 'w')
+    slotsync_file=open(opt.slotsync_conf, 'w')
     
-    slotsync_file.write('## ' + slotsync_fn + '\n')
+    slotsync_file.write('## ' + opt.slotsync_conf + '\n')
     slotsync_file.write('''
 ####################################################################
-## Configuration file for ''' + upgrade_script_fn + '''
+## Configuration file for ''' + opt.slotsync_script + '''
 ##
 ## A list of files and directories, one per line.
 ## Directories are copied recursively.
@@ -455,7 +454,7 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
         slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
-    print('\n' + slotsync_fn + ' created.')
+    print('\n' + opt.slotsync_conf + ' created.')
     
         
 def create_backup_tar(added_file_dct, changed_file_dct):
