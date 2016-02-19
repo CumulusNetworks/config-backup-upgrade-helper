@@ -213,6 +213,7 @@ def clean_mnt_persist():
     print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
     print('Only license files and backup archive files will be preserved.')
     print('The following files, and any empty directories will be deleted:')
+    print('')
     sys.stdout.flush()
     
     subprocess.call(['find', '/mnt/persist/', '-depth',
