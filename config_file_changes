@@ -6,6 +6,7 @@ import re
 import os
 import time
 import shutil
+import shlex
 from pprint import pprint 
 from pprint import pformat
 from sys import version_info
@@ -568,6 +569,7 @@ def run_slotsync_script():
     print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
     subprocess.call(opt.slotsync_script)
 
+
 def shell_out(input_line):
     # Limitations:  1) Can't send pipes
     return subprocess.check_output(shlex.split(input_line))
@@ -576,6 +578,7 @@ def shell_out(input_line):
 def shell_call(input_line):
     # will raise error is return code is not zero
     subprocess.check_call(shlex.split(input_line))
+
 
 def lvm_slotsync(inactive_slot):
     ## lvm storage (x86)
