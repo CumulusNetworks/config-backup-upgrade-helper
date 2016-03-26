@@ -508,7 +508,14 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     #for file in list:
     #  tar rv -f {tmp_dir}/foo.tar filename
     
-    
+    ### pass
+    ### This can be done with the tarfile library:
+    ### import tarfile
+    ### tar = tarfile.open("sample.tar.gz", "w:gz")
+    ###    for name in ["foo", "bar", "quux"]:
+    ###        tar.add(name)
+    ###    tar.close()
+
     # Add all the files to the tarfilename
     print('Adding to config archive:  Files Added since initial install')
     for filename in added_file_dct:
@@ -755,6 +762,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     #print('\n' + opt.include_file + ' created.')
 
     # Tar pipe them:  May not want -m option, may not need --same-owner option
+    #copied_file_list=shell_out('tar -cm -T {0} -f  --no-recursion ')
     copied_file_list=subprocess.check_output(['tar', '-cm', '-T', opt.slotsync_include, '-f', '-',
                                             '--no-recursion', '2>/dev/null', '|',
                                             'tar', '-C', target_slot_dir, '--same-owner', '-xvf', '-'])
@@ -1089,7 +1097,7 @@ def main():
         opt.debug.close()
 
     if opt.sync and not opt.dryrun:
-        run_slotsync_script()
+        #run_slotsync_script()
         slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct)
         clean_mnt_persist()
         
