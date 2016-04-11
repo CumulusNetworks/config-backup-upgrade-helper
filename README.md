@@ -1,3 +1,4 @@
+<pre><code>
 Usage: sudo config_file_changes [-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
@@ -14,3 +15,4 @@ no args - Default: Print output of changed config files to screen
 -x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
 -h, --help, Show this message
 
+</code></pre>
