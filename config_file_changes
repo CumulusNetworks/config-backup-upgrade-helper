@@ -564,7 +564,13 @@ def fixup_lldp_quagga():
     
     
 def check_if_root_or_sudo():
-    pass
+    userid=os.geteuid()
+    #print('EUID is: ' + str(userid))
+    if userid!=0:
+        print('Error:  This script must be run with sudo or as root')
+        sys.exit()
+    else:
+        return
 
 def usage():
     
