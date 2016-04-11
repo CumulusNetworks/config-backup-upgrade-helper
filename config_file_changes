@@ -573,7 +573,7 @@ def usage():
 def parse_opts():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbdfnqsvx:",["help", "backup", "backup_dir=",
+        opts, args = getopt.getopt(sys.argv[1:],"hbcdfnqsvx:",["help", "backup", "create", "backup_dir=",
                                                       "debug", "force", "dryrun",
                                                       "quiet", "sync", "exclude="])
     except getopt.GetoptError:
