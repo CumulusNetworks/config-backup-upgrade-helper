@@ -448,7 +448,20 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
 ####################################################################
 
 ''')
-    
+    #Create list of directories to ensure tarpipe has proper ownership
+    dir_list=[]
+    all_files_list=added_file_dct.keys() + changed_file_dct.keys()
+    for file_to_include in sorted(all_files_list):
+        file_dir=os.path.dirname(file_to_include)
+        if file_dir not in dir_list:
+          dir_list.append(file_dir)
+
+    #Add list of dirs first, then all associated files
+    slotsync_file.write('#Adding all dirs so that permissions will be properly preserved\n')
+    for dir_name in sorted(dir_list):
+        slotsync_file.write('{0}\n'.format(dir_name))
+
+    slotsync_file.write('\n')
     slotsync_file.write('# Files Added since install\n')
     for added_file in sorted(added_file_dct):
         slotsync_file.write('{0}\n'.format(added_file))
