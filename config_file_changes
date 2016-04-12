@@ -614,6 +614,8 @@ def lvm_slotsync(inactive_slot):
 def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
     pass
+    subprocess.call(['ppc_slot_setup'])
+
     #Convert to python or call this code segment from here:
     '''
     source_slot_dir="/"
