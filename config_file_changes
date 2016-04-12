@@ -732,7 +732,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     dir_list=[]
     
     # Call appropriate routine for fstype
-    if fstype=='overlay':
+    if fstype=='overlayfs':
         target_slot_dir=overlay_slotsync(inactive_slot)
     elif fstype=='lvm':
         target_slot_dir=lvm_slotsync(inactive_slot)
