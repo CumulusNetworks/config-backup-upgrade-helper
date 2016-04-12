@@ -766,9 +766,13 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     # Tar pipe them:  May not want -m option, may not need --same-owner option
     #copied_file_list=shell_out('tar -cm -T {0} -f  --no-recursion ')
     #subprocess dont like pipes, unless you use shell - if so make sure no way to do shell injection from input
-    copied_file_list=subprocess.check_output(['tar', '-cm', '-T', opt.slotsync_include, '-f', '-',
+    copied_file_list=subprocess.check_output(['tar', '-c', '-m', '-T', opt.slotsync_include, '-f', '-',
                                             '--no-recursion', '2>/dev/null', '|',
-                                            'tar', '-C', target_slot_dir, '--same-owner', '-xvf', '-'], shell=True)
+                                            'tar', '-x', '-C', target_slot_dir, '--same-owner', '-v', '-f', '-'], shell=True)
+    
+    
+    print('{0} files copied to slot {1}'.format(len(copied_file_list.split('\n')) , inactive_slot))
+    
     # Convert to python:
     '''
     
