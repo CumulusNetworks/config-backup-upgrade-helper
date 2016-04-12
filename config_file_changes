@@ -615,6 +615,7 @@ def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
     pass
     subprocess.call(['ppc_slot_setup'])
+    return '/mnt/root-rw/config{}/'.format(inactive_slot)
 
     #Convert to python or call this code segment from here:
     '''
@@ -726,7 +727,6 @@ fi
 
     
     '''
-    return target_slot_dir
     
     
 def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct):
