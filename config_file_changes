@@ -635,7 +635,7 @@ def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
     script_path=os.path.dirname(os.path.abspath(__file__))
     script_name=os.path.join(script_path, 'ppc_slot_setup')
-    subprocess.call([script_name])
+    subprocess.call(script_name)
     return '/mnt/root-rw/config{}/'.format(inactive_slot)
 
     #Calling this code segment via ppc_slot_setup:
