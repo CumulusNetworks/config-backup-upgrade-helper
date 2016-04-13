@@ -30,8 +30,8 @@
 
   tasks:
     
-    - fail: msg="This script only works on CL 2.x. This router running 3.x"
-      when: ansible_lsb.major_release|int == 2
+    - fail: msg="This script only works on CL 2.x. This router is running 3.x"
+      when: ansible_lsb.major_release|int > 2
       
       
     - name: copy compare script
