@@ -794,6 +794,9 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     
     print('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
     
+    if fstype=='lvm':
+        shell_call('umount {0}'.format(target_slot_dir))
+    
     if opt.debug:
         opt.debug.write('\n------------------------------\nList of files copied:\n')
         opt.debug.write(copied_file_list)
