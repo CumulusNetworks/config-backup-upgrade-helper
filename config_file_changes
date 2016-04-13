@@ -6,19 +6,19 @@ import re
 import os
 import time
 import shutil
+import shlex
 from pprint import pprint 
 from pprint import pformat
 from sys import version_info
 
 
 #To do's
-# 7) Check if root or sudo and warn/exit if not
-# 4) Call slotsync script
+# 14) Refactor slotsync into this script using python
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
 # 10) Write readme.md file for repo with examples
 # 11) Rename, and set log file to match new name
 # 12) implement and test arch=arm
-# 13) refactor debugging to use log facility?
+# 13) refactor debugging and print to use log facility
 
 
 #X 1) implement arg processing
@@ -27,6 +27,8 @@ from sys import version_info
 #X 6) Exclude dir list implementation
 #X 8) Refactor main into 1-2 smaller functions
 #X 9) refactor main again - separate parse_opts
+#X 4) Call slotsync script
+#X 7) Check if root or sudo and warn/exit if not
 
 
 class opt(object):
@@ -35,7 +37,7 @@ class opt(object):
     #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     backup_dir='/mnt/persist/backup'
     create=False
-    debug_fn='/var/log/' + sys.argv[0] + '.log'
+    debug_fn='/var/log/' + os.path.basename(sys.argv[0]) + '.log'
     debug=False
     sync=False
     dryrun=False
@@ -43,6 +45,7 @@ class opt(object):
     exclude_list=[]
     slotsync_script='./slotsync'
     slotsync_conf='/etc/slotsync.conf'
+    slotsync_include='/tmp/include.XXXXXX'
     
 
 def check_blacklist(file_dct):
@@ -51,6 +54,23 @@ def check_blacklist(file_dct):
     
     # The Blacklist attempts a longest match.  e.g. if you add '/etc' to this list,
     #  the entire /etc dir would be excluded (i.e. don't do that)
+    
+    # Note that this script only support /etc/, /home/ and /root/ dirs
+    #the following dirs are automatically excluded later in this script:
+    # '/bin' : 'Executables that should be installed via apt.  Do not copy',
+    # '/boot' : 'Low level boot init data. Do not copy',
+    # '/dev' : 'Device table info. Do not copy',
+    # '/lib' : 'Executable libraries should be installed via apt.  Do not copy',
+    # '/proc' : 'Kernel data. Do not copy',
+    # '/sbin' : 'System executables should be installed by OS or apt.  Do not copy',
+    # '/sys' : 'Kernel data. Do not copy',
+    # '/run' : 'Process data. Do not copy',
+    # '/usr' : 'Executables and libraries should be installed by OS or apt.  Do not copy',
+    # '/var' : 'Various data and libraries should be installed by OS or apt. Do not copy',
+    # '/var/lib/apt' : 'Transient apt data. Do not copy',
+    # '/var/lib/dpkg' : 'Transient dpkg data. Do not copy',
+    # '/var/lib/cumulus' : 'Transient cumulus os data. Do not copy'
+
 
     # Blacklist directory names should not contain a trailing slash
     blacklist_dct={
@@ -76,6 +96,7 @@ def check_blacklist(file_dct):
         '/root/.ansible': 'Ansible tmp files. Do not copy.',
         '/home/cumulus/.ansible': 'Ansible tmp files. Do not copy'
     }
+    
     allowed_file_dct={}
     if opt.debug:
         opt.debug.write('\n------------------------------\nBlacklist Processing:\n')
@@ -140,7 +161,10 @@ def check_whitelist(file_dct):
         '/etc/slotsync.bak':'previous copy of slotsync.conf.  Created by this script',
         '/etc/slotsync.conf': 'control file to copy config files to alt slot. Created by this script',
         '/home' : 'home directories for users',
-        '/root' : 'root user home directory'
+        '/home/cumulus' : 'cumulus user home directory',
+        '/home/cumulus/.ssh' : 'cumulus user ssh configuration files',
+        '/root' : 'root user home directory',
+        '/root/.ssh' : 'root user ssh configuration files'
     }
 
     whitelisted_file_dct={}
@@ -208,31 +232,36 @@ def clean_mnt_persist():
     yes_list = ["y", "Y"]
     
     # Need to create logging here for when run via ansible with --force option
-    print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
-    print('Only license files and backup config archives should be stored in /mnt/persist')
-    print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
-    print('Only license files and backup archive files will be preserved.')
-    print('The following files, and any empty directories will be deleted:')
-    print('')
-    sys.stdout.flush()
     
-    subprocess.call(['find', '/mnt/persist/', '-depth',
+    dirty_file_list=subprocess.check_output(['find', '/mnt/persist/', '-depth',
                      '-path', '/mnt/persist/etc/cumulus/.license*',
                      '-o', '-path', '/mnt/persist/backup/*',
                      '-o', '!', '-type', 'd', '-print',
                      '-o', '-type', 'd', '-empty', '-print'])
     
-    if not opt.force:
-        py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
-        if py3:
-            response = input("Do you wish to continue and delete these files? (Y/n):")
-        else:
-            response = raw_input("Do you wish to continue and delete these files? (Y/n): ")
+    
+    if re.search('[\/a-z0-9]+', dirty_file_list):
+        print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
+        print('Only license files and backup config archives should be stored in /mnt/persist')
+        print('')
+        print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
+        print('Only license files and backup archive files will be preserved.')
+        print('The following files, and any empty directories will be deleted:')    
+        print('')
+        print(dirty_file_list)
+        sys.stdout.flush()
         
-        if response.strip():
-            if response.lstrip()[0] not in yes_list:
-                print("Files in /mnt/persist not removed.  Proceed with caution")
-                return
+        if not opt.force:
+            py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
+            if py3:
+                response = input("Do you wish to continue and delete these files? (Y/n):")
+            else:
+                response = raw_input("Do you wish to continue and delete these files? (Y/n): ")
+            
+            if response.strip():
+                if response.lstrip()[0] not in yes_list:
+                    print("Files in /mnt/persist not removed.  Proceed with caution")
+                    return
     
     # -depth - list dirs after files contained in them
     # this is used at end of recipe to delete the empty dirs after files in them are removed
@@ -246,8 +275,28 @@ def clean_mnt_persist():
                      '-o', '!', '-type', 'd', '-delete',
                      '-o', '-type', 'd', '-empty', '-delete'])
 
-    
-def get_ppc_files():
+
+def get_slots():
+    # Get active slot
+    #active => slot 2 (alt    ): 2.5.2-727a0c6-201504132128-build
+    # or
+    #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
+
+    slot_pattern=re.compile('active\s+\=\>\s+slot\s+(?P<active_slot>[12]+)')
+    cl_img_select=subprocess.check_output('cl-img-select')
+    match=slot_pattern.search(cl_img_select)
+    if match:
+        active_slot=match.group('active_slot')
+        slots=['1', '2']
+        slots.remove(active_slot)
+        inactive_slot=slots[0]
+        return active_slot, inactive_slot
+    else:
+        print('Error: Could not match active slot in cl-img-select')
+        sys.exit(1)
+        
+
+def get_ppc_files(active_slot):
     install_list_dct={}
     local_list_raw=''
     install_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
@@ -261,60 +310,47 @@ def get_ppc_files():
                                     \s+(?P<timezone>[\+\-0-9]+)
                                     \s+
                                     '''+'/mnt/root\-ro(?P<filename>\S+)', re.X)
+    
+    slot='config{}'.format(active_slot)
+    # find all files in /etc /home /root in locally installed files and store
+    # Note that links are not supported and will have to be recreated manually on the other side if needed
+    #find /etc /home /root -type f -exec ls -l --full-time {} \;
+    for dirname in ['etc', 'home', 'root']:
+        try:
+    
+            local_list_raw=local_list_raw + subprocess.check_output(['find',
+                                            '/mnt/root-rw/{0}/{1}'.format(slot, dirname),
+                                            '-type', 'f',
+                                            '-exec', 'ls', '-la', '--full-time', '{}', ';'])
+        except subprocess.CalledProcessError as e:
+            # dir didn't exist, just skip
+            #print(e.output)
+            pass
         
-    # Get active slot
-    #active => slot 2 (alt    ): 2.5.2-727a0c6-201504132128-build
-    # or
-    #active => slot 1 (primary): 2.5.5-4cd66d9-201512071810-build
-
-    slot_pattern=re.compile('active\s+\=\>\s+slot\s+(?P<slot>[12]+)')
-    cl_img_select=subprocess.check_output('cl-img-select')
-    match=slot_pattern.search(cl_img_select)
-    if match:
-        slot='config{}'.format(match.group('slot'))
-        # find all files in /etc /home /root in locally installed files and store
-        # Note that links are not supported and will have to be recreated manually on the other side if needed
-        #find /etc /home /root -type f -exec ls -l --full-time {} \;
-        for dirname in ['etc', 'home', 'root']:
-            try:
-        
-                local_list_raw=local_list_raw + subprocess.check_output(['find',
-                                                '/mnt/root-rw/{0}/{1}'.format(slot, dirname),
-                                                '-type', 'f',
-                                                '-exec', 'ls', '-la', '--full-time', '{}', ';'])
-            except subprocess.CalledProcessError as e:
-                # dir didn't exist, just skip
-                #print(e.output)
-                pass
-            
-        
-        install_list_raw=subprocess.check_output(['find',
-                                                '/mnt/root-ro/etc',
-                                                '/mnt/root-ro/home',
-                                                '/mnt/root-ro/root',
-                                                '-type', 'f',
-                                                '-exec', 'ls', '-l', '--full-time', '{}', ';'])
-        
-       
-        #Output sample:
-        #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
-        
-        
-        for install_line in install_list_raw.split('\n'):
-            match=install_list_pattern.match(install_line)
-            if match:
-                install_filename=match.group('filename')
-                install_datetime='{} {}'.format(match.group('date'), match.group('time'))
-                install_size=match.group('size')
-                install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
+    
+    install_list_raw=subprocess.check_output(['find',
+                                            '/mnt/root-ro/etc',
+                                            '/mnt/root-ro/home',
+                                            '/mnt/root-ro/root',
+                                            '-type', 'f',
+                                            '-exec', 'ls', '-l', '--full-time', '{}', ';'])
+    
+   
+    #Output sample:
+    #-rw-r--r-- 1 root root 580 2016-02-03 18:48:58.752711375 +0000 /etc/network/interfaces
+    
+    
+    for install_line in install_list_raw.split('\n'):
+        match=install_list_pattern.match(install_line)
+        if match:
+            install_filename=match.group('filename')
+            install_datetime='{} {}'.format(match.group('date'), match.group('time'))
+            install_size=match.group('size')
+            install_list_dct[install_filename]={ 'size': install_size, 'datetime' : install_datetime }
  
-    else:
-        print('Error: Could not match active slot in cl-img-select')
-        sys.exit(1)
-        
         
     #End get_ppc_files()     
-    return install_list_dct, local_list_raw, slot
+    return install_list_dct, local_list_raw
 
 
 def get_x86_files():
@@ -493,7 +529,14 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     #for file in list:
     #  tar rv -f {tmp_dir}/foo.tar filename
     
-    
+    ### pass
+    ### This can be done with the tarfile library:
+    ### import tarfile
+    ### tar = tarfile.open("sample.tar.gz", "w:gz")
+    ###    for name in ["foo", "bar", "quux"]:
+    ###        tar.add(name)
+    ###    tar.close()
+
     # Add all the files to the tarfilename
     print('Adding to config archive:  Files Added since initial install')
     for filename in added_file_dct:
@@ -535,7 +578,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     
 
 def run_slotsync_script():
-    
+    #No longer used
     yes_list = ["y", "Y"]
     
     if not opt.force:
@@ -555,12 +598,278 @@ def run_slotsync_script():
     subprocess.call(opt.slotsync_script)
 
 
-def fixup_lldp_quagga():
+def shell_out(input_line):
+    # Limitations:  1) Can't send pipes
+    return subprocess.check_output(shlex.split(input_line))
+
+
+def shell_call(input_line):
+    # will raise error if return code is not zero
+    subprocess.check_call(shlex.split(input_line))
+
+
+def lvm_slotsync(inactive_slot):
+    ## lvm storage (x86)
+    mount_loc_pattern=re.compile('lvm\s+(\S+)')
+    #convert to python or call code segment from here:
+    inact_dev='CUMULUS-SYSROOT{0}'.format(inactive_slot)
+    inact_slot_pattern=re.compile('^'+inact_dev)
+    lsblk=shell_out('lsblk -r')
+    for line in lsblk.split('\n'):
+        if inact_slot_pattern.search(line):
+            match=mount_loc_pattern.search(line)
+            if match:
+                #inactive slot already mounted
+                return match.group(1)
+            else:
+                # slot not mounted - need to mount it
+                inact_mount=shell_out('mktemp -dp /tmp -t slot' + inactive_slot + '_XXXX').rstrip('\n')
+                shell_call('mount /dev/mapper/{0} {1}'.format(inact_dev, inact_mount))
+                return inact_mount
+                    
+    print('Error: dev {0} not found in "lsblk -r" '.format(inact_dev))
+    sys.exit()
+    
+
+def overlay_slotsync(inactive_slot):
+    # Overlay storage (ppc)
+    script_path=os.path.dirname(os.path.abspath(__file__))
+    script_name=os.path.join(script_path, 'ppc_slot_setup')
+    subprocess.call([script_name])
+    return '/mnt/root-rw/config{}/'.format(inactive_slot)
+
+    #Calling this code segment via ppc_slot_setup:
+    '''
+    source_slot_dir="/"
+    target_slot_dir="/mnt/root-rw/config$inactive_slot"
+    strip_dir_count=0
+
+    # go ahead and clear the overlay since installation didn't do it for us
+    rm -rf $target_slot_dir/*
+
+    source /etc/cumulus/init/running/platform.conf
+    if [[ $inactive_slot -eq 1 ]]; then
+        inactive_ropart=$ro_part1
+    else
+        inactive_ropart=$ro_part2
+    fi
+    temp_ro_mount=$(mktemp -dp /tmp -t tmp_ro_mountXXXX )
+    mount -t $ro_type -o $ro_opts /dev/$inactive_ropart $temp_ro_mount
+    if ! diff $temp_ro_mount/etc/lsb-release "$target_slot_dir/etc/cumulus/init/lsb-release" &>/dev/null; then
+        # init_rw_dir in the inactive slot's initramfs will clear the
+        # overlay on firstboot, erasing the files we are about to copy
+        # there. We have to initialize the overlay now to prevent this.
+        # mount up the inactive ro, extract its initramfs, and chroot into
+        # the functions we need.
+
+        # Mount the inactive ro and extract initramfs from its uImage.
+        # Assume initramfs is the first itb property value with "XZ
+        # Compressed" magic number.  itb file format reference:
+        # - https://git.kernel.org/cgit/utils/dtc/dtc.git/plain/Documentation/manual.txt?id=HEAD
+
+        XZMAGIC=fd377a58
+        STRUCT_POINTER_OFFSET=8
+
+        uImage=$temp_ro_mount/boot/uImage.itb
+        declare -A word
+
+        map_word () {
+            word[addr]=$1
+            word[value]=$2
+        }
+
+        map_hex_word_at_cursor() {
+            map_word $(hexdump -s$cursor -n4 -e '/4 "%_ad"' -e '/4 " %x"' $uImage)
+        }
+
+        map_uint_word_at_cursor() {
+            map_word $(hexdump -s$cursor -n4 -e '/4 "%_ad"' -e '/4 " %u"' $uImage)
+        }
+
+        cursor_forward() {
+            cursor=$(($cursor + $1))
+        }
+
+        # cursor = 0
+        cursor=0
+
+        # set cursor to location of struct pointer offset
+        cursor_forward $STRUCT_POINTER_OFFSET
+        # read structure offset (4 bytes), and move cursor to structure
+        cursor=$(hexdump -s$cursor -n4 -e '/4 "%u"' $uImage)
+
+        map_uint_word_at_cursor # read value at cursor
+
+        # while true
+        while true; do
+            while [[ ${word[value]} -ne 3 ]]; do # while 4-byte uint at cursor not 3
+                cursor_forward 4                 #     cursor forward four bytes
+                map_uint_word_at_cursor          #     read 4-byte uint at cursor
+            done
+            cursor_forward 4                     # cursor forward 4 bytes
+            map_uint_word_at_cursor              # read uint size (4 bytes)
+            size=${word[value]}
+            cursor_forward 8                     # cursor forward 8 bytes
+            # if 4-bytes at cursor match 7zip magic
+            #     dd from cursor to (cursor + size)
+            #     exit
+            # else
+            #     cursor forward size bytes
+            #     read value at cursor
+            map_hex_word_at_cursor
+            if [[ "${word[value]}" = "$XZMAGIC" ]];  then
+                temp_initramfs=$(mktemp -p /tmp -t tmp_initramfsXXXX )
+                dd if=$uImage of=$temp_initramfs bs=1 skip=${word[addr]} count=$size &>/dev/null
+                break
+            else
+                cursor_forward $(($size + 4 - $size % 4))
+                map_uint_word_at_cursor
+            fi
+        done
+
+        # unpack with cpio from initramfs busybox tools under /mnt/initramfs
+        temp_initramfs_mount=$(mktemp -dp /tmp -t tmp_initramfs_mountXXXX )
+        mount -t tmpfs none $temp_initramfs_mount
+        cd $temp_initramfs_mount && xzcat $temp_initramfs | /mnt/initramfs/bin/cpio -id 2>/dev/null && cd - > /dev/null
+        # chroot into initramfs and run functions needed to initialize the
+        # target overlay
+        mkdir -p $target_slot_dir/etc/cumulus/init
+        mkdir -p $temp_initramfs_mount/$target_slot_dir
+        mkdir -p $temp_initramfs_mount/ro_mount
+        mount -o bind,ro $temp_ro_mount $temp_initramfs_mount/ro_mount
+        mount -o bind $target_slot_dir $temp_initramfs_mount/$target_slot_dir 
+        mount -t proc none $temp_initramfs_mount/proc
+        mount -o bind /dev $temp_initramfs_mount/dev
+        chroot $temp_initramfs_mount /bin/sh -c "ro_rootmnt=ro_mount script_dir=scripts \
+          source scripts/functions; make_fw_env_config; init_platform_path; init_rw_dir $target_slot_dir"
+        cp $temp_ro_mount/etc/lsb-release $target_slot_dir/etc/cumulus/init/
+    fi
+    
+    '''
+    
+    
+def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct):
     pass
-    # look in cl-img-install -u code for files to run on first boot and put this there...
-    #sudo chown _lldpd /usr/bin/lldpcli
-    #sudo service restart
-    #sudo chown quagga:quagga /var/log/quagga
+    dir_list=[]
+    
+    # Call appropriate routine for fstype
+    if fstype=='overlayfs':
+        target_slot_dir=overlay_slotsync(inactive_slot)
+    elif fstype=='lvm':
+        target_slot_dir=lvm_slotsync(inactive_slot)
+    else:
+        print('Error:  no matching file system type')
+        sys.exit()
+    
+    #Note, dont' need to parse slotsync.conf, just make a list from combination of added
+    # and changed_files_dct and write to an include file for the tarpipe.
+    include_file=open(opt.slotsync_include, 'w')
+
+    #Create list of directories to ensure tarpipe has proper ownership
+    all_files_list=added_file_dct.keys() + changed_file_dct.keys()
+    for file_to_include in sorted(all_files_list):
+        file_dir=os.path.dirname(file_to_include)
+        if file_dir not in dir_list:
+          dir_list.append(file_dir)
+
+    #Add list of dirs first, then all associated files
+    for dir_name in sorted(dir_list):
+        include_file.write('{0}\n'.format(dir_name))
+
+    for file_to_include in sorted(all_files_list):
+        include_file.write('{0}\n'.format(file_to_include))
+        
+    include_file.close()
+    #print('\n' + opt.include_file + ' created.')
+
+    # Tar pipe them:  May not want -m option, may not need --same-owner option
+    #copied_file_list=shell_out('tar -cm -T {0} -f  --no-recursion ')
+    #subprocess dont like pipes, unless you use shell - if so make sure no way to do shell injection from input
+    #copied_file_list=subprocess.check_output(['tar', '-c', '-m', '-T', opt.slotsync_include, '--no-recursion',
+    #                                          '-f - 2>/dev/null | tar -x', '-C', target_slot_dir, '--same-owner', '-v', '-f', '-'], shell=True)
+    copied_file_list=subprocess.check_output('tar -cm -T ' + opt.slotsync_include +
+                                             ' --no-recursion -f - 2>/dev/null | tar -x -C ' +
+                                             target_slot_dir + ' --same-owner -v -f -', shell=True)
+    
+    
+    print('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
+    
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nList of files copied:\n')
+        opt.debug.write(copied_file_list)
+        opt.debug.write('\n\n')
+        opt.debug.write('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
+
+    
+    # Converted to python:
+    '''
+    
+# create temporary files for parsing slotsync.conf
+temp_include=$(mktemp --tmpdir=/tmp include.XXXXXX)
+temp_exclude=$(mktemp --tmpdir=/tmp exclude.XXXXXX)
+
+# always copy config file to other slot
+echo "${source_slot_dir}${SYNC_CONFIG}" > "$temp_include"
+
+# parse includes out of slotsync.conf
+sed "/^-/d;                 # remove lines beginning with '-'
+     s:#.*::;               # remove everything after a hash
+     /^$/d;                 # delete empty lines
+     s:\(^\s*\|\s*$\)::g;   # remove leading and trailing whitespace
+     s:^:$source_slot_dir:  # prepend the source_slot_dir to every line" \
+     "$SYNC_CONFIG" >> "$temp_include"
+
+# excludes defaults, and append any configured excludes
+# to be excluded with "tar -X"
+echo "$exclude" | sed "s:^\s*::; /^$/d; s:^:$source_slot_dir:" > "$temp_exclude"
+exclude_args="-X $temp_exclude"
+if grep -q '^-' $SYNC_CONFIG; then
+    sed -n "s:#.*::;                    # remove everything after a hash
+            s:\(^\s*\|\s*$\)::g;        # remove leading and trailing whitespace
+            s:/$::;                     # remove trailing slash
+            /^-/s:^-:$source_slot_dir:p # on lines with '-', replace - with source_slot_dir
+                                        #   then print the line" \
+            "$SYNC_CONFIG" >> "$temp_exclude"
+fi
+
+# copy specified files and directories.  conceptually:
+# "tar create from temp_include list (optionally excluding some) |tar extract to target_slot_dir"
+file_list=$(
+    tar -cmT "$temp_include" $exclude_args -f - 2>/dev/null |
+    tar -C "$target_slot_dir" --strip-components="$strip_dir_count" -xvf -
+)
+file_count=$(($(echo "$file_list" |wc -l) -1))
+
+mkdir -p $target_slot_dir/var/log
+date >> $target_slot_dir/var/log/$(basename $0).log
+
+cat - << EOUTPUT | tee -a $target_slot_dir/var/log/$(basename $0).log
+Using config file: $SYNC_CONFIG
+Copied the following files to slot $inactive_slot.
+
+$(echo "$file_list" | sed 's:^:  /:')
+
+$file_count files copied to slot $inactive_slot.
+Slot $inactive_slot accessible under directory: $target_slot_dir/
+
+Reminder: if used in the context of up/downgrade this script must be
+used *after* cl-img-install in order to be effective.
+EOUTPUT
+    '''
+
+
+def fixup_lldp_quagga():
+    print('')
+    print('Warning:  If upgrading from a version before 2.5.3 to a later version')
+    print(' You will need to fix up ownership of lldp and quagga after reload')
+    print(' See RN-287 at:')
+    print(' https://support.cumulusnetworks.com/hc/en-us/articles/217997967-Cumulus-Linux-2-5-7-Release-Notes')
+    print('')
+    print('To fix RN-287, run the following 3 commands after reboot to the new image:')
+    print(' sudo chown _lldpd /usr/bin/lldpcli')
+    print(' sudo service lldp restart')
+    print(' sudo chown quagga:quagga /var/log/quagga')
+    print('')
     
     
 def check_if_root_or_sudo():
@@ -571,6 +880,54 @@ def check_if_root_or_sudo():
         sys.exit()
     else:
         return
+    
+
+def check_if_mgmtvrf_or_netns():
+    # Currently mgmtvrf or netns config could lock user out of box during upgrade.
+    # need to check for it and decide how to error gracefully, or fix it
+    # Here is shell code that needs to be convered to python and handling improved:
+    '''
+    if ip netns list | grep -q mgmt; then
+      echo "Error: management namespace is enabled.  Unsupported configuration."
+      exit 2
+    fi
+    if test -e /usr/sbin/cl-mgmtvrf && cl-mgmtvrf -s &>/dev/null ; then
+      echo "Error: management VRF enabled.  Unsupported configuration."
+    exit 2
+    '''
+    pass
+
+
+def detect_fs_type(arch):
+    # convert to python:
+    '''# detect if using lvm (arm,x86) or overlay (ppc)
+    rootdev=$(awk '$2 ~ /^\/$/ && $1 != "rootfs" {print $1}' /proc/mounts)
+    case $rootdev in
+        overlayfs:root)
+            storage="overlayfs"
+            ;;
+        /dev*)
+            if [[ $(basename $(readlink $rootdev)) =~ dm-[[:digit:]]+ ]]; then
+                storage="lvm"
+            else
+                echo "Unknown storage type"
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown storage type"
+            exit 1
+            ;;
+    esac
+'''
+    pass
+    #For now assume ppc is overlay and arm/x86 is lvm
+    if arch == 'ppc':
+        return 'overlayfs'
+    if arch == 'arm' or arch == 'x86_64':
+        return 'lvm'
+        
+    
 
 def usage():
     
@@ -584,7 +941,7 @@ def usage():
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
     print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
     print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
-    print "{0:<15}: {1}".format("-v, --debug", "Verbose: Write out debugging logs to /etc/upgrade-tool-debug.log ")    
+    print "{0:<15}: {1} {2}".format("-v, --debug", "Verbose: Write out debugging logs to", opt.debug_fn)    
     print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
@@ -636,6 +993,8 @@ def main():
     check_if_root_or_sudo()
     
     parse_opts()
+    
+    check_if_mgmtvrf_or_netns()
         
     # setup variables - debug(store data in local files), string lists
     install_list_dct={}
@@ -650,8 +1009,12 @@ def main():
     # find and extract install file based on arch in uname -a
     arch=subprocess.check_output(['uname', '-m']).rstrip('\n')
     
+    fstype=detect_fs_type(arch)
+    active_slot, inactive_slot =get_slots()
+    
+    
     if arch == "ppc":
-        install_list_dct, local_list_raw, slot = get_ppc_files()
+        install_list_dct, local_list_raw = get_ppc_files(active_slot)
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                     \s+(?P<link_count>[0-9]+)
                                     \s+(?P<owner>\w+)
@@ -662,15 +1025,15 @@ def main():
                                     \.(?P<msec>[0-9]+)
                                     \s+(?P<timezone>[\+\-0-9]+)
                                     \s+
-                                    '''+'/mnt/root\-rw/'+slot+'(?P<filename>\S+)', re.X)
+                                    '''+'/mnt/root\-rw/config'+active_slot+'(?P<filename>\S+)', re.X)
        
        
-    if arch == 'arm':
-        #TBD - probably will look like x86
-        pass
+    #if arch == 'arm':
+    #    #TBD - probably will look like x86
+    #    pass
      
     
-    if arch == 'x86_64':
+    if arch == 'x86_64' or arch == 'arm':
         install_list_dct, local_list_raw = get_x86_files()
         local_list_pattern=re.compile(r'''(?P<permissions>[rwxsStT-]+)
                                       \s+(?P<link_count>[0-9]+)
@@ -770,15 +1133,16 @@ def main():
     if opt.backup and not opt.dryrun:
         create_backup_tar(added_file_dct, changed_file_dct)
 
-    if opt.debug:
-        opt.debug.close()
 
     if opt.sync and not opt.dryrun:
-        run_slotsync_script()
+        #run_slotsync_script()
+        slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct)
         clean_mnt_persist()
-        
-    fixup_lldp_quagga()
+        fixup_lldp_quagga()
     
+    if opt.debug and not opt.quiet:
+        print('Closing debug log file {0}'.format(opt.debug_fn))
+        opt.debug.close()
 
 if __name__ == '__main__':
     main()

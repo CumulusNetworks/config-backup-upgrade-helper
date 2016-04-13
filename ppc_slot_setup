@@ -1,0 +1,111 @@
+#!/bin/bash
+# Copyright 2014 Cumulus Networks, Inc. All rights reserved.
+# Author: Trapier Marshall, trapier@cumulusnetworks.com
+
+active_slot=$(/usr/cumulus/bin/cl-img-select |awk '/^active/ {print $4}')
+inactive_slot=$(/usr/cumulus/bin/cl-img-select |awk '! /^active/ {print $2}')
+
+source_slot_dir="/"
+target_slot_dir="/mnt/root-rw/config$inactive_slot"
+strip_dir_count=0
+
+# go ahead and clear the overlay since installation didn't do it for us
+rm -rf $target_slot_dir/*
+
+source /etc/cumulus/init/running/platform.conf
+if [[ $inactive_slot -eq 1 ]]; then
+    inactive_ropart=$ro_part1
+else
+    inactive_ropart=$ro_part2
+fi
+temp_ro_mount=$(mktemp -dp /tmp -t tmp_ro_mountXXXX )
+mount -t $ro_type -o $ro_opts /dev/$inactive_ropart $temp_ro_mount
+if ! diff $temp_ro_mount/etc/lsb-release "$target_slot_dir/etc/cumulus/init/lsb-release" &>/dev/null; then
+    # init_rw_dir in the inactive slot's initramfs will clear the
+    # overlay on firstboot, erasing the files we are about to copy
+    # there. We have to initialize the overlay now to prevent this.
+    # mount up the inactive ro, extract its initramfs, and chroot into
+    # the functions we need.
+
+    # Mount the inactive ro and extract initramfs from its uImage.
+    # Assume initramfs is the first itb property value with "XZ
+    # Compressed" magic number.  itb file format reference:
+    # - https://git.kernel.org/cgit/utils/dtc/dtc.git/plain/Documentation/manual.txt?id=HEAD
+
+    XZMAGIC=fd377a58
+    STRUCT_POINTER_OFFSET=8
+
+    uImage=$temp_ro_mount/boot/uImage.itb
+    declare -A word
+
+    map_word () {
+        word[addr]=$1
+        word[value]=$2
+    }
+
+    map_hex_word_at_cursor() {
+        map_word $(hexdump -s$cursor -n4 -e '/4 "%_ad"' -e '/4 " %x"' $uImage)
+    }
+
+    map_uint_word_at_cursor() {
+        map_word $(hexdump -s$cursor -n4 -e '/4 "%_ad"' -e '/4 " %u"' $uImage)
+    }
+
+    cursor_forward() {
+        cursor=$(($cursor + $1))
+    }
+
+    # cursor = 0
+    cursor=0
+
+    # set cursor to location of struct pointer offset
+    cursor_forward $STRUCT_POINTER_OFFSET
+    # read structure offset (4 bytes), and move cursor to structure
+    cursor=$(hexdump -s$cursor -n4 -e '/4 "%u"' $uImage)
+
+    map_uint_word_at_cursor # read value at cursor
+
+    # while true
+    while true; do
+        while [[ ${word[value]} -ne 3 ]]; do # while 4-byte uint at cursor not 3
+            cursor_forward 4                 #     cursor forward four bytes
+            map_uint_word_at_cursor          #     read 4-byte uint at cursor
+        done
+        cursor_forward 4                     # cursor forward 4 bytes
+        map_uint_word_at_cursor              # read uint size (4 bytes)
+        size=${word[value]}
+        cursor_forward 8                     # cursor forward 8 bytes
+        # if 4-bytes at cursor match 7zip magic
+        #     dd from cursor to (cursor + size)
+        #     exit
+        # else
+        #     cursor forward size bytes
+        #     read value at cursor
+        map_hex_word_at_cursor
+        if [[ "${word[value]}" = "$XZMAGIC" ]];  then
+            temp_initramfs=$(mktemp -p /tmp -t tmp_initramfsXXXX )
+            dd if=$uImage of=$temp_initramfs bs=1 skip=${word[addr]} count=$size &>/dev/null
+            break
+        else
+            cursor_forward $(($size + 4 - $size % 4))
+            map_uint_word_at_cursor
+        fi
+    done
+
+    # unpack with cpio from initramfs busybox tools under /mnt/initramfs
+    temp_initramfs_mount=$(mktemp -dp /tmp -t tmp_initramfs_mountXXXX )
+    mount -t tmpfs none $temp_initramfs_mount
+    cd $temp_initramfs_mount && xzcat $temp_initramfs | /mnt/initramfs/bin/cpio -id 2>/dev/null && cd - > /dev/null
+    # chroot into initramfs and run functions needed to initialize the
+    # target overlay
+    mkdir -p $target_slot_dir/etc/cumulus/init
+    mkdir -p $temp_initramfs_mount/$target_slot_dir
+    mkdir -p $temp_initramfs_mount/ro_mount
+    mount -o bind,ro $temp_ro_mount $temp_initramfs_mount/ro_mount
+    mount -o bind $target_slot_dir $temp_initramfs_mount/$target_slot_dir 
+    mount -t proc none $temp_initramfs_mount/proc
+    mount -o bind /dev $temp_initramfs_mount/dev
+    chroot $temp_initramfs_mount /bin/sh -c "ro_rootmnt=ro_mount script_dir=scripts \
+      source scripts/functions; make_fw_env_config; init_platform_path; init_rw_dir $target_slot_dir"
+    cp $temp_ro_mount/etc/lsb-release $target_slot_dir/etc/cumulus/init/
+fi
