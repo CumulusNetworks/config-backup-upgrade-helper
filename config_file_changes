@@ -13,14 +13,12 @@ from sys import version_info
 
 
 #To do's
-# 14) Refactor slotsync into this script using python
 # 5) Package into deb with slotsync - upgrade-tools  (Ben)
 # 10) Write readme.md file for repo with examples
-# 11) Rename, and set log file to match new name
 # 12) implement and test arch=arm
 # 13) refactor debugging and print to use log facility
 
-
+#Complete
 #X 1) implement arg processing
 #X 2) backup archive option
 #X 3) Create slotsync file
@@ -29,6 +27,8 @@ from sys import version_info
 #X 9) refactor main again - separate parse_opts
 #X 4) Call slotsync script
 #X 7) Check if root or sudo and warn/exit if not
+#X 11) Rename, and set log file to match new name
+#X 14) Refactor slotsync into this script using python
 
 
 class opt(object):

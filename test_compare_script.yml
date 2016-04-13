@@ -1,7 +1,7 @@
 # Usage: ansible-playbook -l hostglob -t tags test_compare_script.yml
 #
 # Attempt to do the following:
-# copy find_changed_files.sh to routers in list
+# copy config_file_changes and ppc_slot_setup to routers in list
 # execute script - output is redirected to a file
 # copy output file off of router
 # Loop this through all the versions v2.5.1-2.5.6, then back down, then 2.5.1 -> 2.5.6 and 2.5.6->2.5.1
@@ -11,13 +11,13 @@
 - hosts: upgradeTest
   user: cumulus
   sudo: true
-  gather_facts: no
+  gather_facts: yes
 
   vars:
     ansible_sudo_pass: 'cn321'
     ansible_ssh_pass: 'cn321'
     version: '2.5.4'
-    version2: '2.5.6'
+    version2: '2.5.7'
     marker: '## config_file_changes script testing marker'
     file_list: 
       - '/etc/network/interfaces'
@@ -29,16 +29,24 @@
     script_conf: '/etc/slotsync.conf'
 
   tasks:
+    
+    - fail: msg="This script only works on CL 2.x. This router running 3.x"
+      when: ansible_lsb.major_release|int == 2
+      
+      
     - name: copy compare script
       copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
       sudo: no
       tags: copy
 
       # Note, if these two scripts were integrated into one, I could use the script module
-    - name: copy slotsync script
-      copy: src=files/upgrade_scripts/slotsync dest=/home/cumulus/ force=yes mode=0755
+    - name: copy ppc_slot_setup script
+      copy: src=files/upgrade_scripts/ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
+      when: ansible_machine == "ppc"
       sudo: no
       tags: copy
+
+      #x86_64 
 
 
     - name: add marker to files in file_dct
@@ -90,6 +98,26 @@
     - name: Grab results
       fetch: src=/etc/slotsync.conf dest=files/test_compare_script/{{inventory_hostname}}-{{version}}
       tags: results
+      
+    - name: test something got logged
+      stat: path=/var/log/config_file_changes.log
+      register: log
+      tags:
+        - assert_logged
+        - tests
+
+    - name: assert something got logged
+      assert: 
+        that:
+          - log.stat.exists == true
+          - log.stat.size > 12
+        msg: "/var/log/config_file_changes.log either not created or not written to"
+  
+      #failed_when: log.stat.exists != true or log.stat.size < 12
+      tags:
+        - assert_logged
+        - tests
+
 
     - name: reboot to alternate image
       command: reboot
@@ -114,24 +142,6 @@
         - assert_copied
         - tests
 
-    - name: test something got logged
-      stat: path=/var/log/slotsync.log
-      register: log
-      tags:
-        - assert_logged
-        - tests
-
-    - name: assert something got logged
-      assert: 
-        that:
-          - log.stat.exists == true
-          - log.stat.size > 12
-        msg: "/var/log/slotsync.log either not created or not written to"
-  
-      #failed_when: log.stat.exists != true or log.stat.size < 12
-      tags:
-        - assert_logged
-        - tests
 
     #- name: assert thirdparty config got copied
     #  stat: path=/etc/{{ thirdpartyconf }}
