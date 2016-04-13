@@ -37,7 +37,7 @@ class opt(object):
     #backup_dir default could be /mnt/persist/backup-configs, could be /tmp, could be /etc
     backup_dir='/mnt/persist/backup'
     create=False
-    debug_fn='/var/log/' + sys.argv[0] + '.log'
+    debug_fn='/var/log/' + os.path.basename(sys.argv[0]) + '.log'
     debug=False
     sync=False
     dryrun=False
@@ -620,7 +620,9 @@ def lvm_slotsync(inactive_slot):
 
 def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
-    subprocess.call(['ppc_slot_setup'])
+    script_path=os.path.dirname(os.path.abspath(__file__))
+    script_name=os.path.join(script_path, 'ppc_slot_setup')
+    subprocess.call([script_name])
     return '/mnt/root-rw/config{}/'.format(inactive_slot)
 
     #Calling this code segment via ppc_slot_setup:
@@ -927,7 +929,7 @@ def usage():
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
     print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
     print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
-    print "{0:<15}: {1} {2}".format("-v, --debug", "Verbose: Write out debugging logs to", debug_fn)    
+    print "{0:<15}: {1} {2}".format("-v, --debug", "Verbose: Write out debugging logs to", opt.debug_fn)    
     print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
 
