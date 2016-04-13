@@ -469,7 +469,11 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
     # backup the previous slotsync file if exists
     if os.path.exists(opt.slotsync_conf):
         os.rename(opt.slotsync_conf, prev_slotsync)
-        
+        #Add slotsync.bak file to the list of added file so it will get copied
+        added_file_dct[prev_slotsync]='previous copy of slotsync.conf.  Created by this script'
+
+    #Add slotsync.conf file to the list of added files so that it also will get copied
+    added_file_dct[opt.slotsync_conf]='control file to copy config files to alt slot. Created by this script'
     slotsync_file=open(opt.slotsync_conf, 'w')
     
     slotsync_file.write('## ' + opt.slotsync_conf + '\n')

@@ -16,8 +16,8 @@
   vars:
     ansible_sudo_pass: 'cn321'
     ansible_ssh_pass: 'cn321'
-    version: '2.5.4'
-    version2: '2.5.7'
+    version2: '2.5.4'
+    version: '2.5.7'
     marker: '## config_file_changes script testing marker'
     file_list: 
       - '/etc/network/interfaces'
@@ -189,104 +189,104 @@
 #########
 # Now load 2nd image and retest
 #########
-
-    - name: install alternate image  
-      cl_img_install: src=http://mon/release/CumulusLinux-{{version2}}-{{arch}}.bin switch_slot=yes
-      tags: install
-
-    - name: execute compare script
-      shell: '/home/cumulus/config_file_changes -s -f -v'
-      tags: execute
-
-    - name: Grab results
-      fetch: src=/etc/slotsync.conf dest=files/test_compare_script/{{inventory_hostname}}-{{version2}}
-      tags: results
-      
-    - name: test something got logged
-      stat: path=/var/log/config_file_changes.log
-      register: log
-      tags:
-        - assert_logged
-        - tests
-
-    - name: assert something got logged
-      assert: 
-        that:
-          - log.stat.exists == true
-          - log.stat.size > 12
-        msg: "/var/log/config_file_changes.log either not created or not written to"
-  
-      #failed_when: log.stat.exists != true or log.stat.size < 12
-      tags:
-        - assert_logged
-        - tests
-
-
-    - name: reboot to alternate image
-      command: reboot
-      async: 0
-      poll: 0
-      ignore_errors: true
-      tags: reboot
-
-
-    - name: wait for switch to come back
-      local_action: wait_for host={{ inventory_hostname }} state=started port=22 delay=20
-      sudo: false
-      tags: wait
-
-    - name: assert all files got copied
-      command: grep '{{marker}}' {{item}}
-      register: g
-      changed_when: "g.rc != 0"
-      failed_when: "g.rc != 0"
-      with_items: file_list
-      tags: 
-        - assert_copied
-        - tests
-
-
-    #- name: assert thirdparty config got copied
-    #  stat: path=/etc/{{ thirdpartyconf }}
-    #  register: f
-    #  failed_when: "f.stat.exists == False"
-    #  tags: 
-    #    - assert_thirdpartycopied
+    #
+    #- name: install alternate image  
+    #  cl_img_install: src=http://mon/release/CumulusLinux-{{version2}}-{{arch}}.bin switch_slot=yes
+    #  tags: install
+    #
+    #- name: execute compare script
+    #  shell: '/home/cumulus/config_file_changes -s -f -v'
+    #  tags: execute
+    #
+    #- name: Grab results
+    #  fetch: src=/etc/slotsync.conf dest=files/test_compare_script/{{inventory_hostname}}-{{version2}}
+    #  tags: results
+    #  
+    #- name: test something got logged
+    #  stat: path=/var/log/config_file_changes.log
+    #  register: log
+    #  tags:
+    #    - assert_logged
     #    - tests
-
-
-    - name: test junk file and dir are removed
-      stat: path=/mnt/persist/junk
-      register: junk
-      tags:
-        - assert_junk 
-        - tests
-
-    - name: assert junk file and dir are removed
-      assert: 
-        that:
-          - junk.stat.exists != true
-        msg: "Junk directory still exists. Fail!"
-      tags: 
-        - assert_junk
-        - tests
-
-
-    - name: assert blacklisted file did not get copied
-      stat: path={{  blacklistedfile }}
-      register: blacklisted
-      failed_when: blacklisted.stat.exists
-      tags: 
-        - assert_blacklist_worked
-        - tests
-
-    - name: assert script configuration exists in target slot
-      stat: path={{  script_conf }}
-      register: script_conf
-      failed_when: script_conf.stat.exists != true
-      tags: 
-        - assert_configuration_migrated
-        - tests
+    #
+    #- name: assert something got logged
+    #  assert: 
+    #    that:
+    #      - log.stat.exists == true
+    #      - log.stat.size > 12
+    #    msg: "/var/log/config_file_changes.log either not created or not written to"
+    #
+    #  #failed_when: log.stat.exists != true or log.stat.size < 12
+    #  tags:
+    #    - assert_logged
+    #    - tests
+    #
+    #
+    #- name: reboot to alternate image
+    #  command: reboot
+    #  async: 0
+    #  poll: 0
+    #  ignore_errors: true
+    #  tags: reboot
+    #
+    #
+    #- name: wait for switch to come back
+    #  local_action: wait_for host={{ inventory_hostname }} state=started port=22 delay=20
+    #  sudo: false
+    #  tags: wait
+    #
+    #- name: assert all files got copied
+    #  command: grep '{{marker}}' {{item}}
+    #  register: g
+    #  changed_when: "g.rc != 0"
+    #  failed_when: "g.rc != 0"
+    #  with_items: file_list
+    #  tags: 
+    #    - assert_copied
+    #    - tests
+    #
+    #
+    ##- name: assert thirdparty config got copied
+    ##  stat: path=/etc/{{ thirdpartyconf }}
+    ##  register: f
+    ##  failed_when: "f.stat.exists == False"
+    ##  tags: 
+    ##    - assert_thirdpartycopied
+    ##    - tests
+    #
+    #
+    #- name: test junk file and dir are removed
+    #  stat: path=/mnt/persist/junk
+    #  register: junk
+    #  tags:
+    #    - assert_junk 
+    #    - tests
+    #
+    #- name: assert junk file and dir are removed
+    #  assert: 
+    #    that:
+    #      - junk.stat.exists != true
+    #    msg: "Junk directory still exists. Fail!"
+    #  tags: 
+    #    - assert_junk
+    #    - tests
+    #
+    #
+    #- name: assert blacklisted file did not get copied
+    #  stat: path={{  blacklistedfile }}
+    #  register: blacklisted
+    #  failed_when: blacklisted.stat.exists
+    #  tags: 
+    #    - assert_blacklist_worked
+    #    - tests
+    #
+    #- name: assert script configuration exists in target slot
+    #  stat: path={{  script_conf }}
+    #  register: script_conf
+    #  failed_when: script_conf.stat.exists != true
+    #  tags: 
+    #    - assert_configuration_migrated
+    #    - tests
 
 
 
