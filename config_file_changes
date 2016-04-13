@@ -161,7 +161,10 @@ def check_whitelist(file_dct):
         '/etc/slotsync.bak':'previous copy of slotsync.conf.  Created by this script',
         '/etc/slotsync.conf': 'control file to copy config files to alt slot. Created by this script',
         '/home' : 'home directories for users',
-        '/root' : 'root user home directory'
+        '/home/cumulus' : 'cumulus user home directory',
+        '/home/cumulus/.ssh' : 'cumulus user ssh configuration files',
+        '/root' : 'root user home directory',
+        '/root/.ssh' : 'root user ssh configuration files'
     }
 
     whitelisted_file_dct={}
@@ -229,31 +232,36 @@ def clean_mnt_persist():
     yes_list = ["y", "Y"]
     
     # Need to create logging here for when run via ansible with --force option
-    print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
-    print('Only license files and backup config archives should be stored in /mnt/persist')
-    print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
-    print('Only license files and backup archive files will be preserved.')
-    print('The following files, and any empty directories will be deleted:')
-    print('')
-    sys.stdout.flush()
     
-    subprocess.call(['find', '/mnt/persist/', '-depth',
+    dirty_file_list=subprocess.check_output(['find', '/mnt/persist/', '-depth',
                      '-path', '/mnt/persist/etc/cumulus/.license*',
                      '-o', '-path', '/mnt/persist/backup/*',
                      '-o', '!', '-type', 'd', '-print',
                      '-o', '-type', 'd', '-empty', '-print'])
     
-    if not opt.force:
-        py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
-        if py3:
-            response = input("Do you wish to continue and delete these files? (Y/n):")
-        else:
-            response = raw_input("Do you wish to continue and delete these files? (Y/n): ")
+    
+    if re.search('[\/a-z0-9]+', dirty_file_list):
+        print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
+        print('Only license files and backup config archives should be stored in /mnt/persist')
+        print('')
+        print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
+        print('Only license files and backup archive files will be preserved.')
+        print('The following files, and any empty directories will be deleted:')    
+        print('')
+        print(dirty_file_list)
+        sys.stdout.flush()
         
-        if response.strip():
-            if response.lstrip()[0] not in yes_list:
-                print("Files in /mnt/persist not removed.  Proceed with caution")
-                return
+        if not opt.force:
+            py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
+            if py3:
+                response = input("Do you wish to continue and delete these files? (Y/n):")
+            else:
+                response = raw_input("Do you wish to continue and delete these files? (Y/n): ")
+            
+            if response.strip():
+                if response.lstrip()[0] not in yes_list:
+                    print("Files in /mnt/persist not removed.  Proceed with caution")
+                    return
     
     # -depth - list dirs after files contained in them
     # this is used at end of recipe to delete the empty dirs after files in them are removed
@@ -557,7 +565,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     
 
 def run_slotsync_script():
-    
+    #No longer used
     yes_list = ["y", "Y"]
     
     if not opt.force:
@@ -583,7 +591,7 @@ def shell_out(input_line):
 
 
 def shell_call(input_line):
-    # will raise error is return code is not zero
+    # will raise error if return code is not zero
     subprocess.check_call(shlex.split(input_line))
 
 
@@ -591,33 +599,31 @@ def lvm_slotsync(inactive_slot):
     ## lvm storage (x86)
     mount_loc_pattern=re.compile('lvm\s+(\S+)')
     #convert to python or call code segment from here:
-    inact_dev='^CUMULUS-SYSROOT{0}'.format(inactive_slot)
-    inact_slot_pattern=re.compile(inact_dev)
+    inact_dev='CUMULUS-SYSROOT{0}'.format(inactive_slot)
+    inact_slot_pattern=re.compile('^'+inact_dev)
     lsblk=shell_out('lsblk -r')
     for line in lsblk.split('\n'):
         if inact_slot_pattern.search(line):
             match=mount_loc_pattern.search(line)
             if match:
                 #inactive slot already mounted
-                return match.group[1]
+                return match.group(1)
             else:
                 # slot not mounted - need to mount it
-                inact_mount=shell_out('mktemp -dp /tmp -t slot' + inactive_slot + '_XXXX')
+                inact_mount=shell_out('mktemp -dp /tmp -t slot' + inactive_slot + '_XXXX').rstrip('\n')
                 shell_call('mount /dev/mapper/{0} {1}'.format(inact_dev, inact_mount))
                 return inact_mount
                     
-        else:
-            print('Error: dev {0} not found in "lsblk -r" '.format(inact_dev))
-            sys.exit()
+    print('Error: dev {0} not found in "lsblk -r" '.format(inact_dev))
+    sys.exit()
     
 
 def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
-    pass
     subprocess.call(['ppc_slot_setup'])
     return '/mnt/root-rw/config{}/'.format(inactive_slot)
 
-    #Convert to python or call this code segment from here:
+    #Calling this code segment via ppc_slot_setup:
     '''
     source_slot_dir="/"
     target_slot_dir="/mnt/root-rw/config$inactive_slot"
@@ -723,8 +729,6 @@ def overlay_slotsync(inactive_slot):
           source scripts/functions; make_fw_env_config; init_platform_path; init_rw_dir $target_slot_dir"
         cp $temp_ro_mount/etc/lsb-release $target_slot_dir/etc/cumulus/init/
     fi
-fi
-
     
     '''
     
@@ -766,14 +770,23 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     # Tar pipe them:  May not want -m option, may not need --same-owner option
     #copied_file_list=shell_out('tar -cm -T {0} -f  --no-recursion ')
     #subprocess dont like pipes, unless you use shell - if so make sure no way to do shell injection from input
-    copied_file_list=subprocess.check_output(['tar', '-c', '-m', '-T', opt.slotsync_include, '-f', '-',
-                                            '--no-recursion', '2>/dev/null', '|',
-                                            'tar', '-x', '-C', target_slot_dir, '--same-owner', '-v', '-f', '-'], shell=True)
+    #copied_file_list=subprocess.check_output(['tar', '-c', '-m', '-T', opt.slotsync_include, '--no-recursion',
+    #                                          '-f - 2>/dev/null | tar -x', '-C', target_slot_dir, '--same-owner', '-v', '-f', '-'], shell=True)
+    copied_file_list=subprocess.check_output('tar -cm -T ' + opt.slotsync_include +
+                                             ' --no-recursion -f - 2>/dev/null | tar -x -C ' +
+                                             target_slot_dir + ' --same-owner -v -f -', shell=True)
     
     
-    print('{0} files copied to slot {1}'.format(len(copied_file_list.split('\n')) , inactive_slot))
+    print('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
     
-    # Convert to python:
+    if opt.debug:
+        opt.debug.write('\n------------------------------\nList of files copied:\n')
+        opt.debug.write(copied_file_list)
+        opt.debug.write('\n\n')
+        opt.debug.write('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
+
+    
+    # Converted to python:
     '''
     
 # create temporary files for parsing slotsync.conf
@@ -831,11 +844,17 @@ EOUTPUT
 
 
 def fixup_lldp_quagga():
-    pass
-    # look in cl-img-install -u code for files to run on first boot and put this there...
-    #sudo chown _lldpd /usr/bin/lldpcli
-    #sudo service restart
-    #sudo chown quagga:quagga /var/log/quagga
+    print('')
+    print('Warning:  If upgrading from a version before 2.5.3 to a later version')
+    print(' You will need to fix up ownership of lldp and quagga after reload')
+    print(' See RN-287 at:')
+    print(' https://support.cumulusnetworks.com/hc/en-us/articles/217997967-Cumulus-Linux-2-5-7-Release-Notes')
+    print('')
+    print('To fix RN-287, run the following 3 commands after reboot to the new image:')
+    print(' sudo chown _lldpd /usr/bin/lldpcli')
+    print(' sudo service lldp restart')
+    print(' sudo chown quagga:quagga /var/log/quagga')
+    print('')
     
     
 def check_if_root_or_sudo():
@@ -1100,16 +1119,16 @@ def main():
     if opt.backup and not opt.dryrun:
         create_backup_tar(added_file_dct, changed_file_dct)
 
-    if opt.debug:
-        opt.debug.close()
 
     if opt.sync and not opt.dryrun:
         #run_slotsync_script()
         slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct)
         clean_mnt_persist()
-        
-    fixup_lldp_quagga()
+        fixup_lldp_quagga()
     
+    if opt.debug and not opt.quiet:
+        print('Closing debug log file {0}'.format(opt.debug_fn))
+        opt.debug.close()
 
 if __name__ == '__main__':
     main()
