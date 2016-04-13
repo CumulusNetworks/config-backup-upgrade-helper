@@ -158,14 +158,17 @@ def check_whitelist(file_dct):
         '/etc/shadow' : 'System password file',
         '/etc/ssh' : 'ssh config files',
         '/etc/sysctl.d' : 'sysctl control options',
-        '/etc/slotsync.bak':'previous copy of slotsync.conf.  Created by this script',
-        '/etc/slotsync.conf': 'control file to copy config files to alt slot. Created by this script',
         '/home' : 'home directories for users',
         '/home/cumulus' : 'cumulus user home directory',
         '/home/cumulus/.ssh' : 'cumulus user ssh configuration files',
         '/root' : 'root user home directory',
         '/root/.ssh' : 'root user ssh configuration files'
     }
+
+        # Now defunct
+        # '/etc/slotsync.bak':'previous copy of slotsync.conf.  Created by this script',
+        # '/etc/slotsync.conf': 'control file to copy config files to alt slot. Created by this script',
+
 
     whitelisted_file_dct={}
     if opt.debug:
@@ -465,6 +468,7 @@ def get_x86_files():
 
 
 def create_slotsync_conf(added_file_dct, changed_file_dct):
+    #This function is now defunct
     prev_slotsync=opt.slotsync_conf.split('.')[0]+'.bak'
     # backup the previous slotsync file if exists
     if os.path.exists(opt.slotsync_conf):
@@ -942,12 +946,14 @@ def usage():
     print "\nDetermine changed config files. Optionally create backup archive or sync to other slot\n"
     print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
     print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
-    print "{0:<15}: {1}".format("-c, --create", "Create /etc/slotsync.conf - but don't call slotsync")
+    #print "{0:<15}: {1}".format("-c, --create", "Create /etc/slotsync.conf - but don't call slotsync")
     print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
     print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
     print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
-    print "{0:<15}: {1}".format("-s, --sync", "Create /etc/slotsync.conf file and call slotsync to move file to alternate slot")
-    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before running slotsync and moving files")
+    # Was; Create /etc/slotsync.conf file and call slotsync to
+    print "{0:<15}: {1}".format("-s, --sync", "Copy changed and added files to alternate slot")
+    #was: Used with -s. Do not ask before running slotsync and moving files
+    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before copying files")
     print "{0:<15}: {1} {2}".format("-v, --debug", "Verbose: Write out debugging logs to", opt.debug_fn)    
     print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
     print "{0:<15}: {1}".format("-h, --help", "Show this message")
@@ -956,7 +962,7 @@ def usage():
 def parse_opts():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbcdfnqsvx:",["help", "backup", "create", "backup_dir=",
+        opts, args = getopt.getopt(sys.argv[1:],"hbdfnqsvx:",["help", "backup", "backup_dir=",
                                                       "debug", "force", "dryrun",
                                                       "quiet", "sync", "exclude="])
     except getopt.GetoptError:
@@ -968,8 +974,8 @@ def parse_opts():
             sys.exit()
         elif opt_arg in ("-b", "--backup"):
             opt.backup=True
-        elif opt_arg in ("-c", "--create"):
-            opt.create=True
+        #elif opt_arg in ("-c", "--create"):
+        #    opt.create=True
         elif opt_arg in ("-d", "--backup_dir"):
             opt.backup_dir=arg
         elif opt_arg in ("-v", "--debug"):
@@ -1134,8 +1140,9 @@ def main():
             for filename in sorted(deleted_file_dct):
                 print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
 
-    if opt.create and not opt.dryrun:
-        create_slotsync_conf(added_file_dct, changed_file_dct)
+    #slot sync is now done via dictionaries of filenames, don't need this file created anymore?
+    #if opt.create and not opt.dryrun:
+    #    create_slotsync_conf(added_file_dct, changed_file_dct)
         
     if opt.backup and not opt.dryrun:
         create_backup_tar(added_file_dct, changed_file_dct)
@@ -1147,8 +1154,9 @@ def main():
         clean_mnt_persist()
         fixup_lldp_quagga()
     
-    if opt.debug and not opt.quiet:
-        print('Closing debug log file {0}'.format(opt.debug_fn))
+    if opt.debug:
+        if not opt.quiet:
+            print('Closing debug log file {0}'.format(opt.debug_fn))
         opt.debug.close()
 
 if __name__ == '__main__':
