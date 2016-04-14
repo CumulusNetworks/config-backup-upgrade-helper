@@ -401,6 +401,10 @@ def get_x86_files():
        --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
     '''
     print('\nProcessing install archive\n')
+    
+    #There are actually two possible names:
+    #  sysroot-internal.tar.gz for internal images - used by test only
+    #  sysroot-release.tar.gz for customer images - the only one supported by this script
     install_list_raw=subprocess.check_output(['tar', '-t', '-v',
                                              '--exclude=bin',
                                              '--exclude=boot',
