@@ -42,14 +42,15 @@
       tags: copy
 
       # Note, if these two scripts were integrated into one, I could use the script module
+      #when arch == "powerpc"
+      #x86_64 
+
     - name: copy ppc_slot_setup script
       copy: src=files/upgrade_scripts/ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
-      #when: ansible_machine == "ppc"
-      when arch == "powerpc"
-      sudo: no
+      when: ansible_machine == "ppc"
+      sudo: false
       tags: copy
 
-      #x86_64 
 
 
     - name: add marker to files in file_dct
