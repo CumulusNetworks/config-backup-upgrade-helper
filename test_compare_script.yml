@@ -29,6 +29,9 @@
     script_conf: '/etc/slotsync.conf'
     arch_dct: {"ppc": "powerpc", "x86_64": "amd64", "arm": "arm"}
     arch: '{{ arch_dct[ansible_machine | default("architecture type unknown")] | default("") }}'
+    img_server: 'mon/release/CumulusLinux'
+    img_server1: 'monster-12/releases/CumulusLinux-{{version1}}/CumulusLinux'
+    img_server2: 'monster-12/releases/CumulusLinux-{{version2}}/CumulusLinux'
 
   tasks:
     
@@ -92,7 +95,7 @@
 #      tags: mark
 
     - name: install alternate image  
-      cl_img_install: src=http://mon/release/CumulusLinux-{{version1}}-{{arch}}.bin switch_slot=yes
+      cl_img_install: src=http://{{img_server1}}-{{version1}}-{{arch}}.bin switch_slot=yes
       tags: install
 
     - name: execute compare script
@@ -196,7 +199,7 @@
 #########
     
     - name: install alternate image  
-      cl_img_install: src=http://mon/release/CumulusLinux-{{version2}}-{{arch}}.bin switch_slot=yes
+      cl_img_install: src=http://{{img_server2}}-{{version2}}-{{arch}}.bin switch_slot=yes
       tags: install
     
     - name: execute compare script
