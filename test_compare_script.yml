@@ -110,10 +110,6 @@
         - assert_logged
         - tests
 
-    - name: Grab results
-      fetch: src=/var/log/config_file_changes.log dest=files/test_compare_script/{{inventory_hostname}}-{{version1}}
-      tags: results
-
     - name: assert something got logged
       assert: 
         that:
@@ -126,6 +122,9 @@
         - assert_logged
         - tests
 
+    - name: Grab results
+      fetch: src=/var/log/config_file_changes.log dest=files/test_compare_script/{{inventory_hostname}}-{{version1}}
+      tags: results
 
     - name: reboot to alternate image
       command: reboot
@@ -206,10 +205,6 @@
     - name: execute compare script
       shell: '/home/cumulus/config_file_changes -s -f -v'
       tags: execute
-    
-    - name: Grab results
-      fetch: src=/etc/slotsync.conf dest=files/test_compare_script/{{inventory_hostname}}-{{version2}}
-      tags: results
       
     - name: test something got logged
       stat: path=/var/log/config_file_changes.log
@@ -230,6 +225,9 @@
         - assert_logged
         - tests
     
+    - name: Grab results
+      fetch: src=/var/log/config_file_changes.log dest=files/test_compare_script/{{inventory_hostname}}-{{version2}}
+      tags: results
     
     - name: reboot to alternate image
       command: reboot
