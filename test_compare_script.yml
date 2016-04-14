@@ -27,6 +27,8 @@
     #Decide if messing with timezone file is breaking the timezone logic
     blacklistedfile: '/etc/bcm.d/testfile.txt'
     script_conf: '/etc/slotsync.conf'
+    arch_dct: {"ppc": "powerpc", "x86_64": "amd64", "arm": "arm"}
+    arch: '{{ arch_dct[ansible_machine | default("architecture type unknown")] | default("") }}'
 
   tasks:
     
@@ -42,7 +44,8 @@
       # Note, if these two scripts were integrated into one, I could use the script module
     - name: copy ppc_slot_setup script
       copy: src=files/upgrade_scripts/ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
-      when: ansible_machine == "ppc"
+      #when: ansible_machine == "ppc"
+      when arch == "powerpc"
       sudo: no
       tags: copy
 
