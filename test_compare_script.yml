@@ -16,7 +16,7 @@
   vars:
     ansible_sudo_pass: 'cn321'
     ansible_ssh_pass: 'cn321'
-    version1: '2.5.4'
+    version1: '2.5.5'
     version2: '2.5.7'
     marker: '## config_file_changes script testing marker'
     file_list: 
