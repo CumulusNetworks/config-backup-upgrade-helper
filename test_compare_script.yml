@@ -146,7 +146,7 @@
       register: g
       changed_when: "g.rc != 0"
       failed_when: "g.rc != 0"
-      with_items: {{file_list}}
+      with_items: "{{ file_list }}"
       tags: 
         - assert_copied
         - tests
