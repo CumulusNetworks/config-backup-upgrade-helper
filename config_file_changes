@@ -643,6 +643,10 @@ def overlay_slotsync(inactive_slot):
     # Overlay storage (ppc)
     script_path=os.path.dirname(os.path.abspath(__file__))
     script_name=os.path.join(script_path, 'ppc_slot_setup')
+    if not os.path.isfile(script_name):
+        print('\n\nERROR: File {0} not found - no files can be copied to alternate slot. \nPlease install from repository. '.format(script_name))
+        sys.exit()    
+        
     subprocess.call(script_name)
     return '/mnt/root-rw/config{}/'.format(inactive_slot)
 
