@@ -11,6 +11,11 @@
 
 
 # Usage
+
+1. If using the 'sync' option, first install the desired new version
+  using cl-img-install
+
+1. Use Migration tool with desired options:
 <pre><code>
 sudo config_file_changes [-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]
      
@@ -44,10 +49,10 @@ no args - Default: Print output of changed config files to screen
   this condition, do:  sudo umount /tmp/slot{x}_{yyyy} 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
-- - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
-- - Celestica/Penguin Arctica 4804X 10G (cel,redstone)
-- - Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
-- - Delta/Agema DNI-3448P (dni,3448p)
+-- Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
+-- Celestica/Penguin Arctica 4804X 10G (cel,redstone)
+-- Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
+-- Delta/Agema DNI-3448P (dni,3448p)
 
 - Does not support 3.0 at this time
 
