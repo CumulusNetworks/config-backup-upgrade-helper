@@ -16,8 +16,8 @@
   vars:
     ansible_sudo_pass: 'cn321'
     ansible_ssh_pass: 'cn321'
-    version1: '2.5.6'
-    version2: '2.5.4'
+    version1: '2.5.4'
+    version2: '2.5.7'
     marker: '## config_file_changes script testing marker'
     file_list: 
       - '/etc/network/interfaces'
@@ -35,7 +35,8 @@
 
   tasks:
     
-    - fail: msg="This script only works on CL 2.x. This router is running 3.x"
+    - name: Verify running 2.x. 
+      fail: msg="This script only works on CL 2.x. This router is running 3.x"
       when: ansible_lsb.major_release|int > 2
       
       
