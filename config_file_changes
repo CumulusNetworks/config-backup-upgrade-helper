@@ -765,7 +765,7 @@ def overlay_slotsync(inactive_slot):
     
     
 def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct):
-    pass
+
     dir_list=[]
     
     # Call appropriate routine for fstype
