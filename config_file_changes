@@ -789,13 +789,37 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
           dir_list.append(file_dir)
 
     #Add list of dirs first, then all associated files
+    print ('Directories that are included in the copy in order to preserve permissions:')
+
     for dir_name in sorted(dir_list):
         include_file.write('{0}\n'.format(dir_name))
+        print('{0}'.format(dir_name))
+        
+    print('Total: {0}'.format(len(dir_list)))    
 
     for file_to_include in sorted(all_files_list):
         include_file.write('{0}\n'.format(file_to_include))
         
     include_file.close()
+    
+    yes_list = ["y", "Y"]
+    if not opt.force:
+        #Verify user wants to migrate file via Y/n input
+        py3 = version_info[0] > 2 #creates boolean value for test that Python major version > 2
+        if py3:
+            response = input("Do you wish to sync these files to the alternate slot now? (Y/n):")
+        else:
+            response = raw_input("Do you wish to sync these files to the alternate slot now? (Y/n): ")
+        
+        if response.strip():
+            if response.lstrip()[0] not in yes_list:
+                print("Files will not be synced to the alternate slot")
+                return
+    #
+    print('\nMigrating config files to alternate slot\n')
+    
+    
+    
     #print('\n' + opt.include_file + ' created.')
 
     # Tar pipe them:  May not want -m option, may not need --same-owner option
@@ -1137,16 +1161,21 @@ def main():
         for filename in sorted(added_file_dct):
             print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
 
+        print('Total: {0}'.format(len(added_file_dct)))
+
         print('')
         print('Files Changed since initial install:')
         for filename in sorted(changed_file_dct):
             print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], changed_file_dct[filename]))
+
+        print('Total: {0}'.format(len(changed_file_dct)))
            
         if arch=='x86_64':    
             print('')
-            print('Files Deleted since initial install:')
+            print('Files Deleted since initial install.  Remove manually if needed:')
             for filename in sorted(deleted_file_dct):
                 print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+        print('')
 
     #slot sync is now done via dictionaries of filenames, don't need this file created anymore?
     #if opt.create and not opt.dryrun:
