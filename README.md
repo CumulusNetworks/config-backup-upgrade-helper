@@ -16,6 +16,7 @@
   using cl-img-install
 
 1. Use Migration tool with desired options:
+
 <pre><code>
 sudo config_file_changes [-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]
      
