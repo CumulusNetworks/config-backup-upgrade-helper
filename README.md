@@ -4,7 +4,7 @@
 - Optionally create a tar archive of these files to /mnt/persist/backup for archival and compare.
 - Optionally migrate these file to the alternate slot after installing a new CL image.
 - Ignore files that should never be backed up (blacklist)
-- Prompts user to automatically clear /mnt/persist of all files except ./backup and license files.
+- Automatically clears /mnt/persist of all files except ./backup and license files.
 - Gives hotfix instructions if upgrading from a version before 2.5.3 due to RN-287
 - All changes are submitted for user approval before being made, unless 'force' option is used
 - Allows optional exclude of specific directories from archive or migration
@@ -42,7 +42,7 @@ no args - Default: Print output of changed config files to screen
   install of an image.
  
 - Clears out all of /mnt/persist except for backup archives and license files.
-  Backup any desired files off the box.
+  Copy any desired files off the box before running this script.
 
 - As part of the migration operation, the 2nd slot on x86 platforms is
   mounted to /tmp/slotx_yyyy. If the script terminates abnormally, this would
@@ -50,10 +50,10 @@ no args - Default: Print output of changed config files to screen
   this condition, do:  sudo umount /tmp/slot{x}_{yyyy} 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
--- Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
--- Celestica/Penguin Arctica 4804X 10G (cel,redstone)
--- Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
--- Delta/Agema DNI-3448P (dni,3448p)
+    - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
+    - Celestica/Penguin Arctica 4804X 10G (cel,redstone)
+    - Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
+    - Delta/Agema DNI-3448P (dni,3448p)
 
 - Does not support 3.0 at this time
 

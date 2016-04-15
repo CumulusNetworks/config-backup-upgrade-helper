@@ -1,5 +1,10 @@
 # Usage: ansible-playbook -l hostglob -t tags test_compare_script.yml
 #
+#  NOTE:  Edit/Change the 'version1' and 'version2' vars to ensure they don't
+#    match the current Alternate and Primary slots respectively.
+#    The Cumulus ansible library detects a match and won't re-install
+#    the same image
+#
 # Attempt to do the following:
 # copy config_file_changes and ppc_slot_setup to routers in list
 # execute script - output is redirected to a file
