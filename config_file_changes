@@ -244,12 +244,13 @@ def clean_mnt_persist():
     
     
     if re.search('[\/a-z0-9]+', dirty_file_list):
-        print('Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
-        print('Only license files and backup config archives should be stored in /mnt/persist')
+        print('Auto-clean /mnt/persist:')
+        print(' Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
+        print(' Only license files and backup config archives should be stored in /mnt/persist')
         print('')
-        print('Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
-        print('Only license files and backup archive files will be preserved.')
-        print('The following files, and any empty directories will be deleted:')    
+        print(' Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
+        print(' Only license files and backup archive files will be preserved.')
+        print(' The following files, and any empty directories will be deleted:')    
         print('')
         print(dirty_file_list)
         sys.stdout.flush()
@@ -841,7 +842,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
         opt.debug.write('\n------------------------------\nList of files copied:\n')
         opt.debug.write(copied_file_list)
         opt.debug.write('\n\n')
-        opt.debug.write('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
+        opt.debug.write('{0} files and directories copied to slot {1}\n\n'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
 
     
     # Converted to python:
