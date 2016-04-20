@@ -44,6 +44,8 @@ no args - Default: Print output of changed config files to screen
  
 - Clears out all of /mnt/persist except for backup archives and license files.
   Copy any desired files off the box before running this script.
+  This is done because having any config files in /mnt/persist is a dangerous
+  workflow that can result in configuration surprises after a reboot.
 
 - As part of the migration operation, the 2nd slot on x86 platforms is
   mounted to /tmp/slotx_yyyy. If the script terminates abnormally, this would
