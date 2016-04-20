@@ -12,23 +12,24 @@
 
 # Usage
 
+1. Copy the files from this repo to the switch user's home directory
+
 1. If using the 'sync' option, first install the desired new version
   using cl-img-install
 
 1. Use Migration tool with desired options:
 
 <pre><code>
-sudo config_file_changes [-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]
+sudo config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-v] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
 
 no args - Default: Print output of changed config files to screen
 -b, --backup, Create a backup archive of changed config files.
 -d, --backup_dir [dir], Location to store backup archive. Default dir is /mnt/persist/backup
--n, --dryrun, Output to screen but don't create any files
--q, --quiet, No output to screen, only create any files requested  
+-n, --dryrun, Output to screen but don't create or remove any files
 -s, --sync, Copy changed and added files to alternate slot
--f, --force, Used with -s. Do not ask before copying files
+-f, --force, Used with -s. Do not ask before copying or removing files
 -v, --debug, Verbose: Write out debugging logs to /var/log/config_file_changes.log
 -x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
 -h, --help, Show this message
