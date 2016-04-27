@@ -38,9 +38,11 @@ no args - Default: Print output of changed config files to screen
 
 
 # Caveats
-- Does not clear out old files from alternate slot before migration.
-  This tool should only be used after cl-img-install creates a fresh
-  install of an image.
+- Currently this tool is not tested on ARM platforms.
+
+- On X86 platforms, this script does not clear out old files from alternate
+  slot before migration.  This tool should only be used after cl-img-install
+  creates a fresh install of an image.
  
 - Clears out all of /mnt/persist except for backup archives and license files.
   Copy any desired files from /mnt/persist off the box before running this script.
@@ -49,8 +51,11 @@ no args - Default: Print output of changed config files to screen
 
 - As part of the migration operation, the 2nd slot on x86 platforms is
   mounted to /tmp/slotx_yyyy. If the script terminates abnormally, this would
-  leave the mount active and prevents cl-img-install from running. To clear
-  this condition, do:  sudo umount /tmp/slot{x}_{yyyy} 
+  leave the mount active and prevents cl-img-install from completing this install,
+  with this error:
+    'Logical volume "SYSROOTx" already exists in volume group "CUMULUS"'
+    'Failure: Problems creating/formatting partition SYSROOT'.
+   To clear this condition, do:  sudo umount /tmp/slot{x}_{yyyy} 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
     - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
@@ -68,5 +73,11 @@ no args - Default: Print output of changed config files to screen
   and maintain configurations.
   
 - Third party packages and add-ons like cl-mgmtvrf are not installed in new slot,
-  although any package config files in /etc will be found and tagged to migrate
+  although any package config files in /etc will be found and tagged to migrate.
+  
+- On x86 platforms, the script can detect if config files have been deleted since
+  the initial install.  However there is no logic to remove those files from the
+  alternate slot.  If removal of those files is desired on the alternate slot, they
+  will have to be removed manually after rebooting into that slot.
+  
 
