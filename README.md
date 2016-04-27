@@ -66,4 +66,7 @@ no args - Default: Print output of changed config files to screen
 - Backup archives should also be copied off the box as part of a HW failure
   and recovery plan if user doesn't use orchestration tools to provision
   and maintain configurations.
+  
+- Third party packages and add-ons like cl-mgmtvrf are not installed in new slot,
+  although any package config files in /etc will be found and tagged to migrate
 
