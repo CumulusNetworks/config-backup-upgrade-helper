@@ -8,6 +8,7 @@
 - Gives hotfix instructions if upgrading from a version before 2.5.3 due to RN-287
 - All changes are submitted for user approval before being made, unless 'force' option is used
 - Allows optional exclude of specific directories from archive or migration
+- Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup/
 
 
 # Usage
@@ -20,7 +21,7 @@
 1. Use Migration tool with desired options:
 
 <pre><code>
-sudo config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-v] [-x] [-h]
+sudo config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
 
@@ -30,7 +31,6 @@ no args - Default: Print output of changed config files to screen
 -n, --dryrun, Output to screen but don't create or remove any files
 -s, --sync, Copy changed and added files to alternate slot
 -f, --force, Used with -s. Do not ask before copying or removing files
--v, --debug, Verbose: Write out debugging logs to /var/log/config_file_changes.log
 -x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
 -h, --help, Show this message
 
