@@ -13,10 +13,17 @@ from sys import version_info
 
 
 #To do's
-# 5) Package into deb with slotsync - upgrade-tools  (Ben)
-# 10) Write readme.md file for repo with examples
+# 5) Package into deb with slotsync - upgrade-tools
 # 12) implement and test arch=arm
 # 13) refactor debugging and print to use log facility
+# 14) Dont require sudo for '--help' option
+# 15) Always log
+# 17) Copy log file to /mnt/persist/backup at end
+# 18) Warning about rsyslog changes in 2.5.5 with pointer to release notes in general
+# 19) Feature:  Add --include to include additional directories
+# 20) Feature: Create a 'restore' tool/option to restore a backup archive to a switch. Run files through blacklist.
+# 21) Feature: Catch if onie-installer file is deleted on x86 and create error message
+# 22) Feature: Create option with logic using dpkg to determine 3rd party installed packages
 
 #Complete
 #X 1) implement arg processing
@@ -29,6 +36,8 @@ from sys import version_info
 #X 7) Check if root or sudo and warn/exit if not
 #X 11) Rename, and set log file to match new name
 #X 14) Refactor slotsync into this script using python
+#X 10) Write readme.md file for repo with examples
+#X 16) remove --quiet mode
 
 
 class opt(object):
@@ -38,7 +47,7 @@ class opt(object):
     backup_dir='/mnt/persist/backup'
     create=False
     debug_fn='/var/log/' + os.path.basename(sys.argv[0]) + '.log'
-    debug=False
+    debug=True
     sync=False
     dryrun=False
     quiet=False
@@ -267,17 +276,21 @@ def clean_mnt_persist():
                     print("Files in /mnt/persist not removed.  Proceed with caution")
                     return
     
-    # -depth - list dirs after files contained in them
-    # this is used at end of recipe to delete the empty dirs after files in them are removed
-    # ignore license files and the files in the backup dir
-    # ignore directories (only list files) and delete all files not ignored previously
-    # then go back and delete any empty dirs after removing files (see -depth)
-    
-    subprocess.call(['find', '/mnt/persist/', '-depth',
-                     '-path', '/mnt/persist/etc/cumulus/.license*',
-                     '-o', '-path', '/mnt/persist/backup/*',
-                     '-o', '!', '-type', 'd', '-delete',
-                     '-o', '-type', 'd', '-empty', '-delete'])
+        if opt.dryrun:
+            print("Dryrun: Files in /mnt/persist not removed.  Proceed with caution")
+            return
+        
+        # -depth - list dirs after files contained in them
+        # this is used at end of recipe to delete the empty dirs after files in them are removed
+        # ignore license files and the files in the backup dir
+        # ignore directories (only list files) and delete all files not ignored previously
+        # then go back and delete any empty dirs after removing files (see -depth)
+        
+        subprocess.call(['find', '/mnt/persist/', '-depth',
+                         '-path', '/mnt/persist/etc/cumulus/.license*',
+                         '-o', '-path', '/mnt/persist/backup/*',
+                         '-o', '!', '-type', 'd', '-delete',
+                         '-o', '-type', 'd', '-empty', '-delete'])
 
 
 def get_slots():
@@ -583,7 +596,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
         sys.exit(1)
 
     # Copy the tarfile to the backup_dir
-    print('Copying tarfile to {0}/{1}'.format(opt.backup_dir, tarfilename))
+    print('Copying tarfile to {0}/{1}'.format(opt.backup_dir, os.path.basename(tarfilename)))
     shutil.copy(tarfilename, opt.backup_dir)
     
     print('Removing temp dir {0}'.format(tmp_dir))
@@ -974,30 +987,28 @@ def detect_fs_type(arch):
     
 
 def usage():
-    
-    print("Usage: " + sys.argv[0] + '[-b] [-d backupdirname] [-n] [-q] [-s] [-f] [-v] [-x] [-h]')
-    print "\nDetermine changed config files. Optionally create backup archive or sync to other slot\n"
-    print "{0:<15}: {1}".format(" no args", "Default: Print output of changed config files to screen")
-    print "{0:<15}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
-    #print "{0:<15}: {1}".format("-c, --create", "Create /etc/slotsync.conf - but don't call slotsync")
-    print "{0:<15}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive. Default dir is /mnt/persist/backup")
-    print "{0:<15}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
-    print "{0:<15}: {1}".format("-q, --quiet", "No output to screen, only create any files requested ")    
-    # Was; Create /etc/slotsync.conf file and call slotsync to
-    print "{0:<15}: {1}".format("-s, --sync", "Copy changed and added files to alternate slot")
-    #was: Used with -s. Do not ask before running slotsync and moving files
-    print "{0:<15}: {1}".format("-f, --force", "Used with -s. Do not ask before copying files")
-    print "{0:<15}: {1} {2}".format("-v, --debug", "Verbose: Write out debugging logs to", opt.debug_fn)    
-    print "{0:<15}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: e.g.  -x /root,/home")
-    print "{0:<15}: {1}".format("-h, --help", "Show this message")
+    print('')
+    print("Usage: " + sys.argv[0] + '[-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]')
+    print "\nDetermine changed config files."
+    print "Optionally create backup archive or sync to other slot\n"
+    print "{0:<18}: {1}".format(" no args", "Default: Print output of changed config files to screen")
+    print "{0:<18}: {1}".format("-b, --backup", "Create a backup archive of changed config files. ")
+    print "{0:<18}: {1}".format("-d, --backup_dir [dir]", "Location to store backup archive.")
+    print "{0:<18}  {1}".format(""," >  Default backup dir is /mnt/persist/backup")
+    print "{0:<18}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
+    print "{0:<18}: {1}".format("-s, --sync", "Copy changed and added files to alternate slot")
+    print "{0:<18}: {1}".format("-f, --force", "Used with -s. Do not ask before copying files")
+    print "{0:<18}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: ")
+    print "{0:<18}  {1}".format(""," >  e.g.  -x /root,/home")
+    print "{0:<18}: {1}".format("-h, --help", "Show this message")
 
 
 def parse_opts():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbdfnqsvx:",["help", "backup", "backup_dir=",
-                                                      "debug", "force", "dryrun",
-                                                      "quiet", "sync", "exclude="])
+        opts, args = getopt.getopt(sys.argv[1:],"hbdfnsx:",["help", "backup", "backup_dir=",
+                                                "force", "dryrun",
+                                                "sync", "exclude="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -1007,18 +1018,12 @@ def parse_opts():
             sys.exit()
         elif opt_arg in ("-b", "--backup"):
             opt.backup=True
-        #elif opt_arg in ("-c", "--create"):
-        #    opt.create=True
         elif opt_arg in ("-d", "--backup_dir"):
             opt.backup_dir=arg
-        elif opt_arg in ("-v", "--debug"):
-            opt.debug=open(opt.debug_fn, 'w')
         elif opt_arg in ("-f", "--force"):
             opt.force=True 
         elif opt_arg in ("-n", "--dryrun"):
             opt.dryrun=True
-        elif opt_arg in ("-q", "--quiet"):
-            opt.quiet=True
         elif opt_arg in ("-s", "--sync"):
             opt.create=True
             opt.sync=True
@@ -1029,17 +1034,17 @@ def parse_opts():
         else:
             print("Bug: Unhandled option")
             sys.exit(1)
-
-    if opt.debug and not opt.quiet:
-        print('Created debug log file {0}'.format(opt.debug_fn))
     
 
 def main():
-    
-    check_if_root_or_sudo()
-    
+        
     parse_opts()
-    
+
+    check_if_root_or_sudo()
+   
+    opt.debug=open(opt.debug_fn, 'w')
+    print('Created debug log file {0}'.format(opt.debug_fn))
+
     check_if_mgmtvrf_or_netns()
         
     # setup variables - debug(store data in local files), string lists
@@ -1156,27 +1161,26 @@ def main():
     # Loop through deletes and compare to blacklist, whitelist
     # No need at this time
     
-    # output results to screen and a slotsync.conf file
-    if not opt.quiet:
-        print('Files Added since initial install:')
-        for filename in sorted(added_file_dct):
-            print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
+    # output results to screen 
+    print('Files Added since initial install:')
+    for filename in sorted(added_file_dct):
+        print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
 
-        print('Total: {0}'.format(len(added_file_dct)))
+    print('Total: {0}'.format(len(added_file_dct)))
 
+    print('')
+    print('Files Changed since initial install:')
+    for filename in sorted(changed_file_dct):
+        print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], changed_file_dct[filename]))
+
+    print('Total: {0}'.format(len(changed_file_dct)))
+       
+    if arch=='x86_64' and deleted_file_dct:    
         print('')
-        print('Files Changed since initial install:')
-        for filename in sorted(changed_file_dct):
-            print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], changed_file_dct[filename]))
-
-        print('Total: {0}'.format(len(changed_file_dct)))
-           
-        if arch=='x86_64':    
-            print('')
-            print('Files Deleted since initial install.  Remove manually if needed:')
-            for filename in sorted(deleted_file_dct):
-                print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
-        print('')
+        print('Files Deleted since initial install.  Remove manually if needed:')
+        for filename in sorted(deleted_file_dct):
+            print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+    print('')
 
     #slot sync is now done via dictionaries of filenames, don't need this file created anymore?
     #if opt.create and not opt.dryrun:
@@ -1193,9 +1197,13 @@ def main():
         fixup_lldp_quagga()
     
     if opt.debug:
-        if not opt.quiet:
-            print('Closing debug log file {0}'.format(opt.debug_fn))
+        print('Closing debug log file {0}'.format(opt.debug_fn))
         opt.debug.close()
+        print('Gzippping and Copying debug log file to /mnt/persist/backup/' + os.path.basename(sys.argv[0]) + '.log.gz')
+        shell_call('gzip -f {}'.format(opt.debug_fn))
+        shutil.copy('{}.gz'.format(opt.debug_fn), opt.backup_dir)
+        
+
 
 if __name__ == '__main__':
     main()
