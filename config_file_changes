@@ -16,9 +16,6 @@ from sys import version_info
 # 5) Package into deb with slotsync - upgrade-tools
 # 12) implement and test arch=arm
 # 13) refactor debugging and print to use log facility
-# 14) Dont require sudo for '--help' option
-# 15) Always log
-# 17) Copy log file to /mnt/persist/backup at end
 # 18) Warning about rsyslog changes in 2.5.5 with pointer to release notes in general
 # 19) Feature:  Add --include to include additional directories
 # 20) Feature: Create a 'restore' tool/option to restore a backup archive to a switch. Run files through blacklist.
@@ -38,6 +35,9 @@ from sys import version_info
 #X 14) Refactor slotsync into this script using python
 #X 10) Write readme.md file for repo with examples
 #X 16) remove --quiet mode
+#X 14) Dont require sudo for '--help' option
+#X 15) Always log
+#X 17) Copy log file to /mnt/persist/backup at end
 
 
 class opt(object):
