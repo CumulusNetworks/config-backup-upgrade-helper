@@ -1,0 +1,96 @@
+# Usage: ansible-playbook -l hostglob -t tags CL_2.5_migrate_to_3.0.yml
+#
+#
+# Attempt to do the following:
+
+# Use the Config Migration Script with the --backup option to:
+#create a backup archive of config files in 2.5,
+#exclude /etc/apt since the sources all change in 3.0,
+#copy the archive off the box.
+
+# After running this script, Install 3.0 on the switch
+
+# Then use another script to then install them to 3.0.
+#Note that you need to follow the section in the 3.0 User docs (URL here) about caveats
+#when migrating configuration files.
+#The example provided below excludes /etc/apt in order to .
+
+# loc=$(mktemp -d)
+#sudo ./config_file_changes --backup --backup_dir $loc --exclude /etc/apt
+# scp $loc/* user@my_external_server:.
+
+#Prerequistes:
+# ansible.hosts file has a group that matches the '- hosts:' group listed below
+# Ansible 'files/' structure exists in the same directory as this playbook
+# 'files/upgrade_scripts/ contains the config_file_changes and ppc_slot_setup scripts
+# 'files/config_archive/ directory will be the place that backup archives will be fetched to.
+# Change the ansible_ssh/sudo_pass vars to match the switch password.
+
+
+  #Set hosts: to match the group in ansible.hosts
+  #Set user: to match the default user
+- hosts: upgradeTo3
+  user: cumulus
+  sudo: true
+  gather_facts: yes
+
+  #Set these password to match your switch
+  vars:
+    ansible_sudo_pass: 'CumulusLinux!'
+    ansible_ssh_pass: 'CumulusLinux!'
+    
+    
+  tasks:
+          
+    - name: Verify running 2.x. 
+      fail: msg="This script only works on CL 2.x. This router is running 3.x"
+      when: ansible_lsb.major_release|int > 2
+  
+
+    - name: copy compare script
+      copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
+      sudo: no
+      tags: copy
+      
+      # Note that PPC isn't supported in CL3, so copying the PPC helper script is only for backup purposes
+    - name: copy PPC helper
+      copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
+      sudo: no
+      tags: copy
+      
+
+    - name: create tmp dir as a backup location
+      shell: mktemp -d
+      register: mktemp
+      tags: mktemp
+
+    - debug: msg="Temp dir is {{ mktemp.stdout }}"
+      tags: mktemp
+      
+      #Exclude /etc/apt because it won't work in 3.0.  Migrate custom repos manually.
+    - name: execute compare script
+      shell: '/home/cumulus/config_file_changes --backup --backup_dir {{ mktemp.stdout }} --exclude /etc/apt'
+      tags: execute
+      
+    - name: get file name
+      shell: ls {{ mktemp.stdout }}
+      register: archive
+      tags: getfilename
+    
+      
+    - debug: msg="Config archive to fetch {{mktemp.stdout}}/{{archive.stdout.split('\n')[0]}}"
+      tags: getfilename
+
+    - debug: msg="Config file script log to fetch {{mktemp.stdout}}/{{archive.stdout.split('\n')[1]}}"
+      tags: getfilename
+
+    - name: fetch config files archive from switch
+      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[0] }}" dest=files/config_archive
+
+    - name: fetch script log file from switch
+      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[1] }}" dest=files/config_archive
+      
+    - name: cleanup temp dir
+      file: name={{ mktemp.stdout }} state=absent
+      tags: cleanup
+      
