@@ -52,9 +52,10 @@
       sudo: no
       tags: copy
       
-      # Note that PPC isn't supported in CL3, so copying the PPC helper script is only for backup purposes
+      # Note that PPC isn't supported in CL3, so copying the PPC helper script is only
+      # Needed if you were adapting this script to sync files to another 2.5 slot
     - name: copy PPC helper if ppc
-      copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
+      copy: src=files/upgrade_scripts/ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
       sudo: no
       when: ansible_machine == "ppc"
       tags: copy
