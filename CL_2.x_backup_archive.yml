@@ -53,12 +53,12 @@
       tags: copy
       
       # Note that PPC isn't supported in CL3, so copying the PPC helper script is only for backup purposes
-    - name: copy PPC helper
+    - name: copy PPC helper if ppc
       copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
       sudo: no
+      when: ansible_machine == "ppc"
       tags: copy
       
-      # improve with -t <template>  like 'config_archive_<date>.XXXX'
     - name: create tmp dir as a backup location
       shell: mktemp -d -t config_archive_{{ansible_date_time.iso8601}}.XXXX
       register: mktemp
