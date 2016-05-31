@@ -1,4 +1,4 @@
-# Usage: ansible-playbook -l hostglob -t tags CL_2.5_migrate_to_3.0.yml
+# Usage: ansible-playbook -l <hostglob> -t <tags> CL_2.x_backup_archive.yml
 #
 #
 # Attempt to do the following:
@@ -24,7 +24,7 @@
 # Ansible 'files/' structure exists in the same directory as this playbook
 # 'files/upgrade_scripts/ contains the config_file_changes and ppc_slot_setup scripts
 # 'files/config_archive/ directory will be the place that backup archives will be fetched to.
-# Change the ansible_ssh/sudo_pass vars to match the switch password.
+# Change the ansible_ssh/sudo_pass vars to match the switch password
 
 
   #Set hosts: to match the group in ansible.hosts
@@ -34,7 +34,7 @@
   sudo: true
   gather_facts: yes
 
-  #Set these password to match your switch
+  #Set these password to match your switch, or remove and use -k and/or -K options or ssh key
   vars:
     ansible_sudo_pass: 'CumulusLinux!'
     ansible_ssh_pass: 'CumulusLinux!'
@@ -58,9 +58,9 @@
       sudo: no
       tags: copy
       
-
+      # improve with -t <template>  like 'config_archive_<date>.XXXX'
     - name: create tmp dir as a backup location
-      shell: mktemp -d
+      shell: mktemp -d -t config_archive_{{ansible_date_time.iso8601}}.XXXX
       register: mktemp
       tags: mktemp
 
