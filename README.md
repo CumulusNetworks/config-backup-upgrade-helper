@@ -10,6 +10,7 @@
 - Allows optional exclude of specific directories from archive or migration
 - Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup/
 
+- Ansible playbook provided to create backup archive from 2.5.  Can be used to migrate configs to 3.0
 
 # Usage
 
@@ -37,7 +38,7 @@ no args - Default: Print output of changed config files to screen
 </code></pre>
 
 
-# Caveats
+# Caveats for Config File Migration Script
 - Currently this tool is not tested on ARM platforms.
 
 - On X86 platforms, this script does not clear out old files from alternate
@@ -79,5 +80,49 @@ no args - Default: Print output of changed config files to screen
   the initial install.  However there is no logic to remove those files from the
   alternate slot.  If removal of those files is desired on the alternate slot, they
   will have to be removed manually after rebooting into that slot.
+  
+
+# Ansible Playbook to Migrate configs from 2.5 for 3.0 
+
+Attached is an ansible playbook designed to install and run the script on a set of switches
+This is provided as a jumpstart to aid in the migration of config files while upgrading
+from Cumulus Linux 2.5 to Cumulus Linux 3.0.
+
+The playbook copies and executes the config_file_changes script with the --backup option
+to create a backup archive, then retrieves that archive as a starting 
+
+# Usage: Ansible Playbook
+
+- Install ansible on a host.  This script was tested with ansible version 1.9.3
+- Check out this repo into a directory on the host
+- Create an ansible.hosts file in that dir:
+<pre><code>
+[upgradeTo3]
+my_switch_name
+my_second_switch_name
+</code></pre>
+
+- Run playbook, specifying the ansible-hosts file and prompt for sudo passwd:
+<pre><code>
+ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
+</code></pre>
+
+- A tar archive of the config files on your 2.5 switches will be fetched to a directory
+  tree rooted at:
+  <pre><code>
+./config_archive/SWITCHNAME/tmp/config_archive_DATESTAMP.XXXX/
+</pre></code>
+  
+- The log file 'config_file_changes.log.gz' will also be stored in that tree
+  
+# Caveats for Migration between 2.5
+
+- The /etc/apt/sources.list and /sources.list.d/ files are not compatible with 3.0 and will
+  be excluded from the config archive.  Manually edit these files and add any custom repos
+  to the sources.list files after upgrading to 3.0
+  
+- cl-mgmtvrf in 2.5 is deprecated.  You will need to configure your 3.0 router for the
+  new Management-VRF feature implementation as described in the 3.0 docs:
+  https://docs.cumulusnetworks.com/display/DOCS/Management+VRF
   
 
