@@ -89,7 +89,8 @@ This is provided as a jumpstart to aid in the migration of config files while up
 from Cumulus Linux 2.5 to Cumulus Linux 3.0.
 
 The playbook copies and executes the config_file_changes script with the --backup option
-to create a backup archive, then retrieves that archive as a starting 
+to create a backup archive, then retrieves that archive back to the ansible host as a
+starting place to plan a migration of config files to 3.0.
 
 # Usage: Ansible Playbook CL_2.x_backup_archive.yml
 
