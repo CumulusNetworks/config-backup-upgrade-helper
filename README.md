@@ -1,4 +1,4 @@
-# Config File Migration script for Cumulus Linux 2.x
+# Config File Migration Script for Cumulus Linux 2.x
 
 - Identify files that have changed since install in /etc, /root, /home
 - Optionally create a tar archive of these files to /mnt/persist/backup for archival and compare.
@@ -12,7 +12,7 @@
 
 - Ansible playbook provided to create backup archive from 2.5.  Can be used to migrate configs to 3.0
 
-# Usage
+# Usage: Config File Migration Script
 
 1. Copy the files from this repo to the switch user's home directory
 
@@ -38,7 +38,7 @@ no args - Default: Print output of changed config files to screen
 </code></pre>
 
 
-# Caveats for Config File Migration Script
+# Caveats: Config File Migration Script
 - Currently this tool is not tested on ARM platforms.
 
 - On X86 platforms, this script does not clear out old files from alternate
@@ -82,11 +82,13 @@ no args - Default: Print output of changed config files to screen
   will have to be removed manually after rebooting into that slot.
   
 
-# Ansible Playbook to Migrate configs from 2.5 for 3.0 
+# Ansible Playbook to Migrate Configs from 2.5 for 3.0 
 
-Attached is an ansible playbook designed to install and run the script on a set of switches
-This is provided as a jumpstart to aid in the migration of config files while upgrading
-from Cumulus Linux 2.5 to Cumulus Linux 3.0.
+Attached is an ansible playbook designed to install and run the Config File Migration
+script on a set of switches.  This is provided as a jumpstart to aid in the migration
+of config files while upgrading from Cumulus Linux 2.5 to Cumulus Linux 3.0.  It also
+provides a quick introduction to the power of orchestration tools to deploy Cumulus
+Linux.
 
 The playbook copies and executes the config_file_changes script with the --backup option
 to create a backup archive, then retrieves that archive back to the ansible host as a
@@ -122,8 +124,9 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
   be excluded from the config archive.  Manually edit these files and add any custom repos
   to the sources.list files after upgrading to 3.0
   
-- cl-mgmtvrf in 2.5 is deprecated.  You will need to configure your 3.0 router for the
-  new Management-VRF feature implementation as described in the 3.0 docs:
+- cl-mgmtvrf and Management namespaces in 2.5 are deprecated.  If you were using either of
+  those tools, you will need to configure your 3.0 router for the new Management-VRF feature
+  implementation as described in the 3.0 docs:
   https://docs.cumulusnetworks.com/display/DOCS/Management+VRF
   
 
