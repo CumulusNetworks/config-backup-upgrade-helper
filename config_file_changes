@@ -1062,6 +1062,7 @@ def main():
     deleted_file_dct={}
     tmp_dir=None
     blank_line_pattern=re.compile('^\W*$')
+    no_sync_mesg='No files were synced to alternate slot, run with --sync or -s option to sync'
     
     # Collect all the file data:
     # find and extract install file based on arch in uname -a
@@ -1168,7 +1169,8 @@ def main():
     # Loop through deletes and compare to blacklist, whitelist
     # No need at this time
     
-    # output results to screen 
+    # output results to screen
+    log_n_print('')
     log_n_print('Files Added since initial install:')
     for filename in sorted(added_file_dct):
         log_n_print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
@@ -1202,6 +1204,9 @@ def main():
         slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dct)
         clean_mnt_persist()
         fixup_lldp_quagga()
+        no_sync_mesg=''
+        
+    log_n_print(no_sync_mesg)
     
     if opt.debug:
         print('Closing debug log file {0}'.format(opt.debug_fn))
