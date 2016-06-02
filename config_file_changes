@@ -60,7 +60,7 @@ class opt(object):
 def log_n_print(mesg):
     print(mesg)
     if opt.debug:
-        opt.debug.write(mesg)
+        opt.debug.write(mesg + '\n')
 
 
 
