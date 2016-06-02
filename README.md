@@ -95,10 +95,10 @@ to create a backup archive, then retrieves that archive as a starting
 
 - Install ansible on a host.  This script was tested with ansible version 1.9.3
 - Check out this repo into a directory on the host
-- Create an ansible.hosts file in that dir:
+- Edit the ansible.hosts file in that dir and put in the actual switch names:
 <pre><code>
 [upgradeTo3]
-my_switch_name
+my_first_switch_name
 my_second_switch_name
 </code></pre>
 
