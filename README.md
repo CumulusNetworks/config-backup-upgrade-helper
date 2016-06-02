@@ -15,13 +15,34 @@
 
 1. Copy the files from this repo to the switch user's home directory
 
+2. Run the script to see files that have changed since an initial install:
+
+<pre><code>sudo ./config_file_changes</code></pre>
+
+3. Remove any files that should not be pushed across to the other slot:
+
+<pre><code>sudo ./config_file_changes -x /home/cumulus/.git,/etc/ssh</code></pre>
+
+4. Push the files to the other slot:
+
+<pre><code>sudo ./config_file_changes -s</code></pre>
+
+5. [OPTIONAL] Create a backup file.
+
+<pre><code>sudo ./config_file_changes -b</code></pre>
+
+6. Reload the switch into the other slot
+<pre>cl-img-select 2
+reload</pre>
+
+Notes:
 1. If using the 'sync' option, first install the desired new version
   using cl-img-install
 
-1. Use Migration tool with desired options:
+2. Use Migration tool with desired options:
 
 <pre><code>
-sudo config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
+sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
 
