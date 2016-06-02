@@ -57,6 +57,13 @@ class opt(object):
     slotsync_include='/tmp/include.XXXXXX'
     
 
+def log_n_print(mesg):
+    print(mesg)
+    if opt.debug:
+        opt.debug.write(mesg)
+
+
+
 def check_blacklist(file_dct):
     # For more detailed information refer to this User Guide document:
     #https://docs.cumulusnetworks.com/display/DOCS/Troubleshooting+the+etc+Directory
@@ -253,15 +260,15 @@ def clean_mnt_persist():
     
     
     if re.search('[\/a-z0-9]+', dirty_file_list):
-        print('Auto-clean /mnt/persist:')
-        print(' Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
-        print(' Only license files and backup config archives should be stored in /mnt/persist')
-        print('')
-        print(' Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
-        print(' Only license files and backup archive files will be preserved.')
-        print(' The following files, and any empty directories will be deleted:')    
-        print('')
-        print(dirty_file_list)
+        log_n_print('Auto-clean /mnt/persist:')
+        log_n_print(' Any stale files in /mnt/persist/ will overwrite files in the new slot on boot-up')
+        log_n_print(' Only license files and backup config archives should be stored in /mnt/persist')
+        log_n_print('')
+        log_n_print(' Auto-cleaning old /etc files out of /mnt/persist to avoid upgrade hangovers')
+        log_n_print(' Only license files and backup archive files will be preserved.')
+        log_n_print(' The following files, and any empty directories will be deleted:')    
+        log_n_print('')
+        log_n_print(dirty_file_list)
         sys.stdout.flush()
         
         if not opt.force:
@@ -273,11 +280,11 @@ def clean_mnt_persist():
             
             if response.strip():
                 if response.lstrip()[0] not in yes_list:
-                    print("Files in /mnt/persist not removed.  Proceed with caution")
+                    log_n_print("Files in /mnt/persist not removed.  Proceed with caution")
                     return
     
         if opt.dryrun:
-            print("Dryrun: Files in /mnt/persist not removed.  Proceed with caution")
+            log_n_print("Dryrun: Files in /mnt/persist not removed.  Proceed with caution")
             return
         
         # -depth - list dirs after files contained in them
@@ -309,7 +316,7 @@ def get_slots():
         inactive_slot=slots[0]
         return active_slot, inactive_slot
     else:
-        print('Error: Could not match active slot in cl-img-select')
+        log_n_print('Error: Could not match active slot in cl-img-select')
         sys.exit(1)
         
 
@@ -403,8 +410,8 @@ def get_x86_files():
     #Note, use import shlex; command_line= raw_input(); args=shlex.split(command_line) to sort out subprocess args
     
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
-    print('temp dir created is {0}'.format(tmp_dir))
-    print('\nExtracting initial install file\n')
+    log_n_print('temp dir created is {0}'.format(tmp_dir))
+    log_n_print('\nExtracting initial install file\n')
     subprocess.call(['sh', installer_file, 'extract', tmp_dir])
     # This doesn't work, but we may not care...
     #subprocess.call(['cd', tmp_dir])
@@ -414,7 +421,7 @@ def get_x86_files():
     tar -t -v --exclude=bin --exclude=boot --exclude=usr --exclude=sbin --exclude=dev --exclude=run --exclude=var
        --exclude=lib --full-time -f sysroot-release.tar.gz | egrep -v -- '^d|->'
     '''
-    print('\nProcessing install archive\n')
+    log_n_print('\nProcessing install archive\n')
     
     #There are actually two possible names:
     #  sysroot-internal.tar.gz for internal images - used by test only
@@ -434,7 +441,7 @@ def get_x86_files():
     
            
     #Remove tmp_dir here to save space in case of crash
-    print('Deleting temp dir {0}\n'.format(tmp_dir))
+    log_n_print('Deleting temp dir {0}\n'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
     
@@ -463,9 +470,9 @@ def get_x86_files():
     
         else:
             # No match
-            print('Error: Installed image filename, date, and size not parsed correctly.')
-            print('Line: #'+install_line+'#')
-            print('Decide what to do here... exit or continue')
+            log_n_print('Error: Installed image filename, date, and size not parsed correctly.')
+            log_n_print('Line: #'+install_line+'#')
+            log_n_print('Decide what to do here... exit or continue')
             
     if opt.debug:
         opt.debug.write('--------------------------\ninstall_list_dct:\n')
@@ -534,7 +541,7 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
         slotsync_file.write('{0}\n'.format(changed_file))
         
     slotsync_file.close()
-    print('\n' + opt.slotsync_conf + ' created.')
+    log_n_print('\n' + opt.slotsync_conf + ' created.')
     
         
 def create_backup_tar(added_file_dct, changed_file_dct):
@@ -542,7 +549,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
     tarfilename=os.path.join(tmp_dir, 'config-archive-' + datestamp +'.tar')
-    print('\nCreating Config archive: ' + tarfilename)
+    log_n_print('\nCreating Config archive: ' + tarfilename)
 
     # 
     #copy files to temp_dir?  or just add file to tar
@@ -564,18 +571,18 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     ###    tar.close()
 
     # Add all the files to the tarfilename
-    print('Adding to config archive:  Files Added since initial install')
+    log_n_print('Adding to config archive:  Files Added since initial install')
     for filename in added_file_dct:
         #copy to tmp_dir
         subprocess.call(['tar', '-r', '-P', '-f', tarfilename, filename])
     
-    print('Adding to config archive:  Files Changed since initial install')
+    log_n_print('Adding to config archive:  Files Changed since initial install')
     for filename in changed_file_dct:
         subprocess.call(['tar', '-r', '-P', '-f', tarfilename , filename])
 
 
     #Now compress it
-    print('Compressing tarfile to {0}.gz'.format(tarfilename))
+    log_n_print('Compressing tarfile to {0}.gz'.format(tarfilename))
     subprocess.call(['gzip', tarfilename])
     tarfilename='{0}.gz'.format(tarfilename)
     
@@ -586,20 +593,20 @@ def create_backup_tar(added_file_dct, changed_file_dct):
         os.makedirs(opt.backup_dir)
 
     # need to check space
-    print('Checking space on {0}'.format(opt.backup_dir))
+    log_n_print('Checking space on {0}'.format(opt.backup_dir))
     statvfs=os.statvfs(opt.backup_dir)
     free=statvfs.f_frsize * statvfs.f_bfree
     tarfileinfo=os.stat(tarfilename)
     if tarfileinfo.st_size > free:
-        print('Error: {0} filesystem does not have enough free space to store tar file'.format(opt.backup_dir))
-        print('Free space: {0} {1} size: {2}'.format(free, tarfilename, tarfileinfo.st_size))
+        log_n_print('Error: {0} filesystem does not have enough free space to store tar file'.format(opt.backup_dir))
+        log_n_print('Free space: {0} {1} size: {2}'.format(free, tarfilename, tarfileinfo.st_size))
         sys.exit(1)
 
     # Copy the tarfile to the backup_dir
-    print('Copying tarfile to {0}/{1}'.format(opt.backup_dir, os.path.basename(tarfilename)))
+    log_n_print('Copying tarfile to {0}/{1}'.format(opt.backup_dir, os.path.basename(tarfilename)))
     shutil.copy(tarfilename, opt.backup_dir)
     
-    print('Removing temp dir {0}'.format(tmp_dir))
+    log_n_print('Removing temp dir {0}'.format(tmp_dir))
     shutil.rmtree(tmp_dir)
     
 
@@ -617,10 +624,10 @@ def run_slotsync_script():
         
         if response.strip():
             if response.lstrip()[0] not in yes_list:
-                print("Files will not be synced to the alternate slot")
+                log_n_print("Files will not be synced to the alternate slot")
                 return
     #
-    print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
+    log_n_print('\nCalling ' + opt.slotsync_script + '  to copy config files to alternate slot\n')
     subprocess.call(opt.slotsync_script)
 
 
@@ -653,7 +660,7 @@ def lvm_slotsync(inactive_slot):
                 shell_call('mount /dev/mapper/{0} {1}'.format(inact_dev, inact_mount))
                 return inact_mount
                     
-    print('Error: dev {0} not found in "lsblk -r" '.format(inact_dev))
+    log_n_print('Error: dev {0} not found in "lsblk -r" '.format(inact_dev))
     sys.exit()
     
 
@@ -662,7 +669,7 @@ def overlay_slotsync(inactive_slot):
     script_path=os.path.dirname(os.path.abspath(__file__))
     script_name=os.path.join(script_path, 'ppc_slot_setup')
     if not os.path.isfile(script_name):
-        print('\n\nERROR: File {0} not found - no files can be copied to alternate slot. \nPlease install from repository. '.format(script_name))
+        log_n_print('\n\nERROR: File {0} not found - no files can be copied to alternate slot. \nPlease install from repository. '.format(script_name))
         sys.exit()    
         
     subprocess.call(script_name)
@@ -788,7 +795,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     elif fstype=='lvm':
         target_slot_dir=lvm_slotsync(inactive_slot)
     else:
-        print('Error:  no matching file system type')
+        log_n_print('Error:  no matching file system type')
         sys.exit()
     
     #Note, dont' need to parse slotsync.conf, just make a list from combination of added
@@ -807,9 +814,9 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
 
     for dir_name in sorted(dir_list):
         include_file.write('{0}\n'.format(dir_name))
-        print('{0}'.format(dir_name))
+        log_n_print('{0}'.format(dir_name))
         
-    print('Total: {0}'.format(len(dir_list)))    
+    log_n_print('Total: {0}'.format(len(dir_list)))    
 
     for file_to_include in sorted(all_files_list):
         include_file.write('{0}\n'.format(file_to_include))
@@ -827,14 +834,14 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
         
         if response.strip():
             if response.lstrip()[0] not in yes_list:
-                print("Files will not be synced to the alternate slot")
+                log_n_print("Files will not be synced to the alternate slot")
                 return
     #
-    print('\nMigrating config files to alternate slot\n')
+    log_n_print('\nMigrating config files to alternate slot\n')
     
     
     
-    #print('\n' + opt.include_file + ' created.')
+    #log_n_print('\n' + opt.include_file + ' created.')
 
     # Tar pipe them:  May not want -m option, may not need --same-owner option
     #copied_file_list=shell_out('tar -cm -T {0} -f  --no-recursion ')
@@ -846,7 +853,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
                                              target_slot_dir + ' --same-owner -v -f -', shell=True)
     
     
-    print('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
+    log_n_print('{0} files and directories copied to slot {1}'.format(len(copied_file_list.rstrip('\n').split('\n')) , inactive_slot))
     
     if fstype=='lvm':
         shell_call('umount {0}'.format(target_slot_dir))
@@ -916,17 +923,17 @@ EOUTPUT
 
 
 def fixup_lldp_quagga():
-    print('')
-    print('Warning:  If upgrading from a version before 2.5.3 to a later version')
-    print(' You will need to fix up ownership of lldp and quagga after reload')
-    print(' See RN-287 at:')
-    print(' https://support.cumulusnetworks.com/hc/en-us/articles/217997967-Cumulus-Linux-2-5-7-Release-Notes')
-    print('')
-    print('To fix RN-287, run the following 3 commands after reboot to the new image:')
-    print(' sudo chown _lldpd /usr/bin/lldpcli')
-    print(' sudo service lldp restart')
-    print(' sudo chown quagga:quagga /var/log/quagga')
-    print('')
+    log_n_print('')
+    log_n_print('Warning:  If upgrading from a version before 2.5.3 to a later version')
+    log_n_print(' You will need to fix up ownership of lldp and quagga after reload')
+    log_n_print(' See RN-287 at:')
+    log_n_print(' https://support.cumulusnetworks.com/hc/en-us/articles/217997967-Cumulus-Linux-2-5-7-Release-Notes')
+    log_n_print('')
+    log_n_print('To fix RN-287, run the following 3 commands after reboot to the new image:')
+    log_n_print(' sudo chown _lldpd /usr/bin/lldpcli')
+    log_n_print(' sudo service lldp restart')
+    log_n_print(' sudo chown quagga:quagga /var/log/quagga')
+    log_n_print('')
     
     
 def check_if_root_or_sudo():
@@ -1028,9 +1035,9 @@ def parse_opts():
             opt.create=True
             opt.sync=True
         elif opt_arg in ("-x", "--exclude"):
-            #print('Exclude arg is {}'.format(arg))
+            #log_n_print('Exclude arg is {}'.format(arg))
             opt.exclude_list=arg.split(',')
-            #print('Exclude list is {0}'.format(exclude_list))
+            #log_n_print('Exclude list is {0}'.format(exclude_list))
         else:
             print("Bug: Unhandled option")
             sys.exit(1)
@@ -1043,7 +1050,7 @@ def main():
     check_if_root_or_sudo()
    
     opt.debug=open(opt.debug_fn, 'w')
-    print('Created debug log file {0}'.format(opt.debug_fn))
+    log_n_print('Created debug log file {0}'.format(opt.debug_fn))
 
     check_if_mgmtvrf_or_netns()
         
@@ -1126,9 +1133,9 @@ def main():
             pass
         
         else:
-            print('Error: Local filename, date, and size not parsed correctly.')
-            print('Local Line: #'+local_line+'#')
-            print('Decide what to do here... exit or continue')
+            log_n_print('Error: Local filename, date, and size not parsed correctly.')
+            log_n_print('Local Line: #'+local_line+'#')
+            log_n_print('Decide what to do here... exit or continue')
      
     if opt.debug:
         opt.debug.write('\n------------------------------\nTemp added file list:\n')
@@ -1162,25 +1169,25 @@ def main():
     # No need at this time
     
     # output results to screen 
-    print('Files Added since initial install:')
+    log_n_print('Files Added since initial install:')
     for filename in sorted(added_file_dct):
-        print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
+        log_n_print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], added_file_dct[filename]))
 
-    print('Total: {0}'.format(len(added_file_dct)))
+    log_n_print('Total: {0}'.format(len(added_file_dct)))
 
-    print('')
-    print('Files Changed since initial install:')
+    log_n_print('')
+    log_n_print('Files Changed since initial install:')
     for filename in sorted(changed_file_dct):
-        print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], changed_file_dct[filename]))
+        log_n_print('{0:<40}{1:<10} # {2}'.format(filename, local_list_dct[filename]['datetime'][0:10], changed_file_dct[filename]))
 
-    print('Total: {0}'.format(len(changed_file_dct)))
+    log_n_print('Total: {0}'.format(len(changed_file_dct)))
        
     if arch=='x86_64' and deleted_file_dct:    
-        print('')
-        print('Files Deleted since initial install.  Remove manually if needed:')
+        log_n_print('')
+        log_n_print('Files Deleted since initial install.  Remove manually if needed:')
         for filename in sorted(deleted_file_dct):
-            print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
-    print('')
+            log_n_print('{0:<40}# {1}'.format(filename, deleted_file_dct[filename]))
+    log_n_print('')
 
     #slot sync is now done via dictionaries of filenames, don't need this file created anymore?
     #if opt.create and not opt.dryrun:
