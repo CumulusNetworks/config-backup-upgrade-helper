@@ -115,7 +115,7 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
   
 - The log file 'config_file_changes.log.gz' will also be stored in that tree
   
-# Caveats for Migration between 2.5
+# Caveats for Migration between 2.5 and 3.0
 
 - The /etc/apt/sources.list and /sources.list.d/ files are not compatible with 3.0 and will
   be excluded from the config archive.  Manually edit these files and add any custom repos
