@@ -1206,7 +1206,7 @@ def main():
         fixup_lldp_quagga()
         no_sync_mesg=''
         
-    log_n_print(no_sync_mesg)
+    log_n_print('\n'+no_sync_mesg+'\n')
     
     if opt.debug:
         print('Closing debug log file {0}'.format(opt.debug_fn))
