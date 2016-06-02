@@ -22,7 +22,7 @@
 1. Use Migration tool with desired options:
 
 <pre><code>
-sudo config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
+sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
 
@@ -64,10 +64,12 @@ no args - Default: Print output of changed config files to screen
     - Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
     - Delta/Agema DNI-3448P (dni,3448p)
 
-- Does not support 3.0 at this time
+- Does not support 3.0 at this time.
 
 - Files are identified by their modification time, so a 'touch' on a file
-  is considered a changed file
+  is considered a changed file.
+  
+- Symlinks are ignored.
 
 - Backup archives should also be copied off the box as part of a HW failure
   and recovery plan if user doesn't use orchestration tools to provision
@@ -82,7 +84,7 @@ no args - Default: Print output of changed config files to screen
   will have to be removed manually after rebooting into that slot.
   
 
-# Ansible Playbook to Migrate Configs from 2.5 for 3.0 
+# Ansible Playbook to Migrate Configs from 2.5 for 3.0 preparation
 
 Attached is an ansible playbook designed to install and run the Config File Migration
 script on a set of switches.  This is provided as a jumpstart to aid in the migration
@@ -119,6 +121,15 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
 - The log file 'config_file_changes.log.gz' will also be stored in that tree
   
 # Caveats for Migration between 2.5 and 3.0
+
+- The goal of this script is to identify and back up files that should be considered
+  to move from 2.5 to 3.0.  Each file in the archive should be examined to determine
+  if it has been changed by the network administrator and if the changed files need to
+  be migrated, merged, or not moved to 3.0.  Note that the default configuration files
+  may have been changed between versions, in which case only changes should be merged.
+  
+- /etc/passwd and /etc/shadow should not be migrated to 3.0 directly.  Any locally created
+  users should be added to the 3.0 installation after upgrade.
 
 - The /etc/apt/sources.list and /sources.list.d/ files are not compatible with 3.0 and will
   be excluded from the config archive.  Manually edit these files and add any custom repos

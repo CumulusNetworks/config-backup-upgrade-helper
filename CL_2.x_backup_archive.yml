@@ -71,7 +71,7 @@
       
       #Exclude /etc/apt because it won't work in 3.0.  Migrate custom repos manually.
     - name: execute compare script
-      shell: '/home/cumulus/config_file_changes --backup --backup_dir {{ mktemp.stdout }} --exclude /etc/apt'
+      shell: '/home/cumulus/config_file_changes --backup --backup_dir {{ mktemp.stdout }} --exclude /etc/apt,/etc/passwd,/etc/shadow'
       tags: execute
       
     - name: get file name
