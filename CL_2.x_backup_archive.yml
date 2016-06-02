@@ -34,7 +34,7 @@
   sudo: true
   gather_facts: yes
 
-  #Set these password to match your switch, or remove and use -k and/or -K options or ssh key
+  #Set these password to match your switch, or use -K option to override, or use ssh key
   vars:
     ansible_sudo_pass: 'CumulusLinux!'
     ansible_ssh_pass: 'CumulusLinux!'
@@ -48,7 +48,7 @@
   
 
     - name: copy compare script
-      copy: src=files/upgrade_scripts/config_file_changes dest=/home/cumulus/ force=yes mode=0755
+      copy: src=./config_file_changes dest=/home/cumulus/ force=yes mode=0755
       sudo: no
       tags: copy
       
@@ -56,7 +56,7 @@
       # so copying the PPC helper script is only needed if you were adapting this script
       # to sync files to another 2.5 slot
     #- name: copy PPC helper if ppc
-    #  copy: src=files/upgrade_scripts/ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
+    #  copy: src=./ppc_slot_setup dest=/home/cumulus/ force=yes mode=0755
     #  sudo: no
     #  when: ansible_machine == "ppc"
     #  tags: copy
@@ -87,10 +87,10 @@
       tags: getfilename
 
     - name: fetch config files archive from switch
-      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[0] }}" dest=files/config_archive
+      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[0] }}" dest=./config_archive
 
     - name: fetch script log file from switch
-      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[1] }}" dest=files/config_archive
+      fetch: src="{{mktemp.stdout}}/{{ archive.stdout.split('\n')[1] }}" dest=./config_archive
       
     - name: cleanup temp dir
       file: name={{ mktemp.stdout }} state=absent

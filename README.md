@@ -91,7 +91,7 @@ from Cumulus Linux 2.5 to Cumulus Linux 3.0.
 The playbook copies and executes the config_file_changes script with the --backup option
 to create a backup archive, then retrieves that archive as a starting 
 
-# Usage: Ansible Playbook
+# Usage: Ansible Playbook CL_2.x_backup_archive.yml
 
 - Install ansible on a host.  This script was tested with ansible version 1.9.3
 - Check out this repo into a directory on the host
