@@ -23,7 +23,7 @@ sudo ./config_file_changes
 
 1. Remove any files that should not be pushed across to the other slot. Example:
 <pre>
-sudo ./config_file_changes -x /home/cumulus/.git,/etc/ssh
+sudo ./config_file_changes -x /home/cumulus/.git,/etc/passwd,/etc/shadow
 </pre>
 
 1. If using the '--sync' option, install the desired 2.5 new version to the other slot
@@ -160,8 +160,8 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
   users should be added to the 3.0 installation after upgrade.
 
 - The /etc/apt/sources.list and /sources.list.d/ files are not compatible with 3.0 and will
-  be excluded from the config archive.  Manually edit these files and add any custom repos
-  to the sources.list files after upgrading to 3.0
+  be excluded from the config archive when using the ansible playbook.  Manually edit these
+  files and add any custom repos to the sources.list files after upgrading to 3.0
   
 - cl-mgmtvrf and Management namespaces in 2.5 are deprecated.  If you were using either of
   those tools, you will need to configure your 3.0 router for the new Management-VRF feature
