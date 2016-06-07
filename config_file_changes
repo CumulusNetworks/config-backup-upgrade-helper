@@ -1013,7 +1013,7 @@ def usage():
 def parse_opts():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbdfnsx:",["help", "backup", "backup_dir=",
+        opts, args = getopt.getopt(sys.argv[1:],"hbd:fnsx:",["help", "backup", "backup_dir=",
                                                 "force", "dryrun",
                                                 "sync", "exclude="])
     except getopt.GetoptError:
