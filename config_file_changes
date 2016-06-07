@@ -1211,7 +1211,7 @@ def main():
     if opt.debug:
         print('Closing debug log file {0}'.format(opt.debug_fn))
         opt.debug.close()
-        print('Gzippping and Copying debug log file to /mnt/persist/backup/' + os.path.basename(sys.argv[0]) + '.log.gz')
+        print('Gzippping and Copying debug log file to ' + opt.backup_dir + '/' + os.path.basename(sys.argv[0]) + '.log.gz')
         shell_call('gzip -f {}'.format(opt.debug_fn))
         shutil.copy('{}.gz'.format(opt.debug_fn), opt.backup_dir)
         
