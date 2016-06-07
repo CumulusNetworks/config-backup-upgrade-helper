@@ -548,7 +548,7 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     #mktemp dir
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
-    tarfilename=os.path.join(tmp_dir, 'config-archive-' + datestamp +'.tar')
+    tarfilename=os.path.join(tmp_dir, os.uname()[1] + '-config-archive-' + datestamp +'.tar')
     log_n_print('\nCreating Config archive: ' + tarfilename)
 
     # 

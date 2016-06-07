@@ -22,7 +22,7 @@ host$ cd REPO_DIR  #e.g.: $ cd config-backup-upgrade-helper
 host$ scp config_file_changes ppc_slot_setup cumulus@switch:.
 </pre>
 
-1. On the swtich, run the script to see files that have changed since an initial install:
+1. On the switch, run the script to see files that have changed since an initial install:
 <pre>
 cumulus@switch$ sudo ./config_file_changes
 </pre>
@@ -51,8 +51,8 @@ scp /mnt/persist/backup/config-archive-DATE_TIME.tar.gz  user@host:.
 
 1. Make the other slot primary and reload the switch
 <pre>
-cl-img-select -sf
-reload
+sudo cl-img-select -sf
+sudo reload
 </pre>
 
 1. If upgrading from a version prior to 2.5.3, apply the workaround for RN-287.  Instructions are
