@@ -27,7 +27,7 @@ host$ scp config_file_changes ppc_slot_setup cumulus@switch:.
 cumulus@switch$ sudo ./config_file_changes
 </pre>
 
-1. Remove any files that should not be pushed across to the other slot. Example:
+1. Remove any files that you do not want pushed across to the other slot, if any. Example:
 <pre>
 sudo ./config_file_changes -x /home/cumulus/.git,/etc/passwd,/etc/shadow
 </pre>
@@ -39,12 +39,13 @@ cl-img-install IMAGE-URL
 
 1. Push the files to the other slot:
 <pre>
-sudo ./config_file_changes -s
+sudo ./config_file_changes -s -x LIST_OF_FILES_TO_EXCLUDE
 </pre>
 
-1. [OPTIONAL] Create a backup archive tar file and store it off-router.  Default switch location is /mnt/persist/backup/.
+1. [OPTIONAL] Create a backup archive tar file and store it off-router.  Default switch location
+is /mnt/persist/backup/.
 <pre>
-sudo ./config_file_changes -b
+sudo ./config_file_changes -b  -x LIST_OF_FILES_TO_EXCLUDE
 scp /mnt/persist/backup/config-archive-DATE_TIME.tar.gz  user@host:.
 </pre>
 
@@ -53,6 +54,9 @@ scp /mnt/persist/backup/config-archive-DATE_TIME.tar.gz  user@host:.
 cl-img-select -sf
 reload
 </pre>
+
+1. If upgrading from a version prior to 2.5.3, apply the workaround for RN-287.  Instructions are
+printed out when running the script.
 
 ###Detailed Description of Migration Tool Options:
 
