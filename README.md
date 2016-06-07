@@ -16,10 +16,38 @@
 
 1. Copy the files from this repo to the switch user's home directory
 
-1. If using the 'sync' option, first install the desired new version
-  using cl-img-install
+1. Run the script to see files that have changed since an initial install:
+<pre>
+sudo ./config_file_changes
+</pre>
 
-1. Use Migration tool with desired options:
+1. Remove any files that should not be pushed across to the other slot. Example:
+<pre>
+sudo ./config_file_changes -x /home/cumulus/.git,/etc/ssh
+</pre>
+
+1. If using the '--sync' option, install the desired 2.5 new version to the other slot
+<pre>
+cl-img-install IMAGE-URL
+</pre>
+
+1. Push the files to the other slot:
+<pre>
+sudo ./config_file_changes -s
+</pre>
+
+1. [OPTIONAL] Create a backup file.
+<pre>
+sudo ./config_file_changes -b
+</pre>
+
+1. Make the other slot primary and reload the switch
+<pre>
+cl-img-select -sf
+reload
+</pre>
+
+###Detailed Description of Migration Tool Options:
 
 <pre><code>
 sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
