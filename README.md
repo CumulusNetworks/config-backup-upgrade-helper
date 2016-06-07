@@ -14,11 +14,17 @@
 
 # Usage: Config File Migration Script
 
-1. Copy the files from this repo to the switch user's home directory
-
-1. Run the script to see files that have changed since an initial install:
+1. Copy the executable files from this repo to the switch user's home directory.
+Note that the 'ppc_slot_setup' script is only needed for PowerPC architecture switches
 <pre>
-sudo ./config_file_changes
+host$ git clone THIS_REPO_URL
+host$ cd REPO_DIR  #e.g.: $ cd config-backup-upgrade-helper
+host$ scp config_file_changes ppc_slot_setup cumulus@switch:.
+</pre>
+
+1. On the swtich, run the script to see files that have changed since an initial install:
+<pre>
+cumulus@switch$ sudo ./config_file_changes
 </pre>
 
 1. Remove any files that should not be pushed across to the other slot. Example:
@@ -36,9 +42,10 @@ cl-img-install IMAGE-URL
 sudo ./config_file_changes -s
 </pre>
 
-1. [OPTIONAL] Create a backup file.
+1. [OPTIONAL] Create a backup archive tar file and store it off-router.  Default switch location is /mnt/persist/backup/.
 <pre>
 sudo ./config_file_changes -b
+scp /mnt/persist/backup/config-archive-DATE_TIME.tar.gz  user@host:.
 </pre>
 
 1. Make the other slot primary and reload the switch
