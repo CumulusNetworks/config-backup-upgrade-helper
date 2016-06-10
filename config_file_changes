@@ -1211,9 +1211,12 @@ def main():
     if opt.debug:
         print('Closing debug log file {0}'.format(opt.debug_fn))
         opt.debug.close()
-        print('Gzippping and Copying debug log file to ' + opt.backup_dir + '/' + os.path.basename(sys.argv[0]) + '.log.gz')
-        shell_call('gzip -f {}'.format(opt.debug_fn))
-        shutil.copy('{}.gz'.format(opt.debug_fn), opt.backup_dir)
+        if (opt.backup or opt.sync) and not opt.dryrun:
+            print('Gzippping and Copying debug log file to ' + opt.backup_dir + '/' + os.path.basename(sys.argv[0]) + '.log.gz')
+            shell_call('gzip -f {}'.format(opt.debug_fn))
+            if not os.path.exists(opt.backup_dir):
+                os.makedirs(opt.backup_dir)
+            shutil.copy('{}.gz'.format(opt.debug_fn), opt.backup_dir)
         
 
 
