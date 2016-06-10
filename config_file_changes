@@ -493,7 +493,7 @@ def get_x86_files():
 
 
 def create_slotsync_conf(added_file_dct, changed_file_dct):
-    #This function is now defunct
+    #This function is now defunct.  It is replaced with slotsync()
     prev_slotsync=opt.slotsync_conf.split('.')[0]+'.bak'
     # backup the previous slotsync file if exists
     if os.path.exists(opt.slotsync_conf):
@@ -545,6 +545,9 @@ def create_slotsync_conf(added_file_dct, changed_file_dct):
     
         
 def create_backup_tar(added_file_dct, changed_file_dct):
+
+    dir_list=[]
+
     #mktemp dir
     tmp_dir=subprocess.check_output(['mktemp',  '-d']).rstrip('\n')
     datestamp=time.strftime("%Y-%m-%d-%H:%M:%S")
@@ -562,13 +565,32 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     #for file in list:
     #  tar rv -f {tmp_dir}/foo.tar filename
     
-    ### pass
     ### This can be done with the tarfile library:
     ### import tarfile
     ### tar = tarfile.open("sample.tar.gz", "w:gz")
     ###    for name in ["foo", "bar", "quux"]:
     ###        tar.add(name)
     ###    tar.close()
+    
+    
+    
+    #Create list of directories to ensure tar archve has proper ownership for dirs with only subdirs in them
+    all_files_list=added_file_dct.keys() + changed_file_dct.keys()
+    for file_to_include in sorted(all_files_list):
+        file_dir=os.path.dirname(file_to_include)
+        if file_dir not in dir_list:
+          dir_list.append(file_dir)
+          
+
+    #Add list of dirs first, then all associated files
+    log_n_print ('Directories that are included in the copy in order to preserve permissions:')
+
+    for dir_name in sorted(dir_list):
+        subprocess.call(['tar', '-r', '-P', '--no-recursion', '-f', tarfilename, dir_name])
+        log_n_print('{0}'.format(dir_name))
+        
+    log_n_print('Total: {0}\n'.format(len(dir_list)))    
+
 
     # Add all the files to the tarfilename
     log_n_print('Adding to config archive:  Files Added since initial install')
@@ -810,7 +832,7 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
           dir_list.append(file_dir)
 
     #Add list of dirs first, then all associated files
-    print ('Directories that are included in the copy in order to preserve permissions:')
+    log_n_print ('Directories that are included in the copy in order to preserve permissions:')
 
     for dir_name in sorted(dir_list):
         include_file.write('{0}\n'.format(dir_name))
