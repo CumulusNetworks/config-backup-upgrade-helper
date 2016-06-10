@@ -573,14 +573,18 @@ def create_backup_tar(added_file_dct, changed_file_dct):
     ###    tar.close()
     
     
-    
-    #Create list of directories to ensure tar archve has proper ownership for dirs with only subdirs in them
+    #Create list of directories to ensure tar archive has proper ownership for dirs with only subdirs in them
     all_files_list=added_file_dct.keys() + changed_file_dct.keys()
     for file_to_include in sorted(all_files_list):
         file_dir=os.path.dirname(file_to_include)
         if file_dir not in dir_list:
-          dir_list.append(file_dir)
-          
+            dir_list.append(file_dir)
+        # Now recurse backwards up the path to include any dirs up the chain
+        path, lastdir = os.path.split(file_dir)
+        while lastdir != '':
+            if path not in dir_list:
+                dir_list.append(path)
+            path, lastdir = os.path.split(path)
 
     #Add list of dirs first, then all associated files
     log_n_print ('Directories that are included in the copy in order to preserve permissions:')
@@ -829,7 +833,14 @@ def slotsync(active_slot, inactive_slot, fstype, added_file_dct, changed_file_dc
     for file_to_include in sorted(all_files_list):
         file_dir=os.path.dirname(file_to_include)
         if file_dir not in dir_list:
-          dir_list.append(file_dir)
+            dir_list.append(file_dir)
+        # Now recurse backwards up the path to include any dirs up the chain
+        path, lastdir = os.path.split(file_dir)
+        while lastdir != '':
+            if path not in dir_list:
+                dir_list.append(path)
+            path, lastdir = os.path.split(path)
+
 
     #Add list of dirs first, then all associated files
     log_n_print ('Directories that are included in the copy in order to preserve permissions:')
