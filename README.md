@@ -1,6 +1,6 @@
 # Config File Migration Script for Cumulus Linux 2.x
 
-- Identify files that have changed since install in /etc, /root, /home
+- Identify files that have changed since install in `/etc, /root, /home`
 - Optionally create a tar archive of these files to /mnt/persist/backup for archival and compare.
 - Optionally migrate these file to the alternate slot after installing a new CL image.
 - Ignore files that should never be backed up (blacklist)
@@ -8,8 +8,8 @@
 - Gives hotfix instructions if upgrading from a version before 2.5.3 due to RN-287
 - All changes are submitted for user approval before being made, unless 'force' option is used
 - Allows optional exclude of specific directories from archive or migration
-- Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup/
-- Backup archive can be restored to a newly imaged switch via 'tar -C / -xvf BACKUP_ARCHIVE_NAME'
+- Write out debugging log to `/var/log/config_file_changes.log.gz` and store a copy in `/mnt/persist/backup/`
+- Backup archive can be restored to a newly imaged switch via `tar -C / -xvf BACKUP_ARCHIVE_NAME`
 
 - Ansible playbook provided to create backup archive from 2.5.  Can be used to migrate configs to 3.0
 
@@ -64,9 +64,9 @@ sudo reload
 1. If upgrading from a version prior to 2.5.3, apply the workaround for RN-287.  Instructions are
 printed out when running the script.
 
-###Detailed Description of Migration Tool Options:
+### Detailed Description of Migration Tool Options:
 
-<pre><code>
+```
 sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
@@ -79,8 +79,7 @@ no args - Default: Print output of changed config files to screen
 -f, --force, Used with -s. Do not ask before copying or removing files
 -x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
 -h, --help, Show this message
-
-</code></pre>
+```
 
 
 # Caveats: Config File Migration Script
@@ -90,21 +89,23 @@ no args - Default: Print output of changed config files to screen
   slot before migration.  This tool should only be used after cl-img-install
   creates a fresh install of an image.
  
-- Clears out all of /mnt/persist except for backup archives and license files.
-  Copy any desired files from /mnt/persist off the box before running this script.
-  This is done because having any config files in /mnt/persist is a dangerous
+- Clears out all of `/mnt/persist` except for backup archives and license files.
+  Copy any desired files from `/mnt/persist` off the box before running this script.
+  This is done because having any config files in `/mnt/persist` is a dangerous
   workflow that can result in configuration surprises after a reboot.
 
 - As part of the migration operation, the alternate slot on x86 platforms is
-  mounted to /tmp/slotX_YYYY. If the script terminates abnormally, this would
+  mounted to `/tmp/slotX_YYYY`. If the script terminates abnormally, this would
   leave the mount active and prevent cl-img-install from completing this install,
   in which case this error will be seen during the install:
-  <pre>
-    Logical volume "SYSROOTx" already exists in volume group "CUMULUS"
-    Failure: Problems creating/formatting partition SYSROOT
-  </pre>
+<pre>
+Logical volume "SYSROOTx" already exists in volume group "CUMULUS"
+Failure: Problems creating/formatting partition SYSROOT
+</pre>
    To clear this condition, do:
-   <pre>sudo umount /tmp/slotX_YYYY</pre> 
+<pre>
+sudo umount /tmp/slotX_YYYY
+</pre> 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
     - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
@@ -126,11 +127,11 @@ no args - Default: Print output of changed config files to screen
 - Management Namespace is a deprecated feature as of 2.5.4, and is replaced
   with the Management VRF feature in Cumulus Linux 2.5.5 and 3.0.  Management Namespace
   files will NOT be automatically migrated when using this script, and any Namespace
-  config files will be removed by the clean up of /mnt/persist.  If it is desired to continue
+  config files will be removed by the clean up of `/mnt/persist`.  If it is desired to continue
   using Mgmt Namespace in 2.5, the following procedure must be followed:
     - Follow the procedure listed in the Usage section above, stopping before running 'sudo reload'
     - Follow the upgrade procedure at the bottom of the Configuring a Management Namespace Knowledge
-    Base Article at this link: https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace.
+    Base Article at this link: <https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace>.
     Note: Be sure to Skip Step 7 'Install the Cumulus Linux image onto the switch', since that was done
     in the first procedure
     
@@ -168,11 +169,13 @@ they are discovered.
 - Install ansible on a host.  This script was tested with ansible version 1.9.3
 - Check out this repo into a directory on the host
 - Edit the ansible.hosts file in that dir and put in the actual switch names:
-<pre><code>
+<pre>
+<code>
 [upgradeTo3]
 my_first_switch_name
 my_second_switch_name
-</code></pre>
+</code>
+</pre>
 
 - Run playbook, specifying the ansible-hosts file and prompt for sudo passwd:
 <pre>
