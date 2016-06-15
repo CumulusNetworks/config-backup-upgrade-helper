@@ -8,7 +8,7 @@
 - Gives hotfix instructions if upgrading from a version before 2.5.3 due to RN-287
 - All changes are submitted for user approval before being made, unless 'force' option is used
 - Allows optional exclude of specific directories from archive or migration
-- Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup/
+- Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup
 - Backup archive can be restored to a newly imaged switch via 'tar -C / -xvf BACKUP_ARCHIVE_NAME'
 
 - Ansible playbook provided to create backup archive from 2.5.  Can be used to migrate configs to 3.0
@@ -64,9 +64,10 @@ sudo reload
 1. If upgrading from a version prior to 2.5.3, apply the workaround for RN-287.  Instructions are
 printed out when running the script.
 
-###Detailed Description of Migration Tool Options:
+### Detailed Description of Migration Tool Options:
 
-<pre><code>
+
+```
 sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
      
 Determine changed config files. Optionally create backup archive or sync to other slot
@@ -79,11 +80,10 @@ no args - Default: Print output of changed config files to screen
 -f, --force, Used with -s. Do not ask before copying or removing files
 -x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
 -h, --help, Show this message
-
-</code></pre>
-
+```
 
 # Caveats: Config File Migration Script
+
 - Currently this tool is not tested on ARM platforms.
 
 - On X86 platforms, this script does not clear out old files from alternate
@@ -99,12 +99,14 @@ no args - Default: Print output of changed config files to screen
   mounted to /tmp/slotX_YYYY. If the script terminates abnormally, this would
   leave the mount active and prevent cl-img-install from completing this install,
   in which case this error will be seen during the install:
-  <pre>
-    Logical volume "SYSROOTx" already exists in volume group "CUMULUS"
-    Failure: Problems creating/formatting partition SYSROOT
-  </pre>
+<pre>
+Logical volume "SYSROOTx" already exists in volume group "CUMULUS"
+Failure: Problems creating/formatting partition SYSROOT
+</pre>
    To clear this condition, do:
-   <pre>sudo umount /tmp/slotX_YYYY</pre> 
+<pre>
+sudo umount /tmp/slotX_YYYY
+</pre> 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
     - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
@@ -130,7 +132,7 @@ no args - Default: Print output of changed config files to screen
   using Mgmt Namespace in 2.5, the following procedure must be followed:
     - Follow the procedure listed in the Usage section above, stopping before running 'sudo reload'
     - Follow the upgrade procedure at the bottom of the Configuring a Management Namespace Knowledge
-    Base Article at this link: https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace.
+    Base Article at this link: <https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace>.
     Note: Be sure to Skip Step 7 'Install the Cumulus Linux image onto the switch', since that was done
     in the first procedure
     
