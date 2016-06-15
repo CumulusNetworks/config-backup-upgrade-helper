@@ -9,8 +9,10 @@
 - All changes are submitted for user approval before being made, unless 'force' option is used
 - Allows optional exclude of specific directories from archive or migration
 - Write out debugging log to /var/log/config_file_changes.log.gz and store a copy in /mnt/persist/backup/
+- Backup archive can be restored to a newly imaged switch via 'tar -C / -xvf BACKUP_ARCHIVE_NAME'
 
 - Ansible playbook provided to create backup archive from 2.5.  Can be used to migrate configs to 3.0
+
 
 # Usage: Config File Migration Script
 
@@ -46,7 +48,11 @@ sudo ./config_file_changes -s -x LIST_OF_FILES_TO_EXCLUDE
 is /mnt/persist/backup/.
 <pre>
 sudo ./config_file_changes -b  -x LIST_OF_FILES_TO_EXCLUDE
-scp /mnt/persist/backup/config-archive-DATE_TIME.tar.gz  user@host:.
+scp /mnt/persist/backup/SWITCHNAME-config-archive-DATE_TIME.tar.gz  user@host:.
+</pre>
+Note:  A backup can be restored to a newly imaged switch via:
+<pre>
+tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
 </pre>
 
 1. Make the other slot primary and reload the switch
@@ -89,13 +95,16 @@ no args - Default: Print output of changed config files to screen
   This is done because having any config files in /mnt/persist is a dangerous
   workflow that can result in configuration surprises after a reboot.
 
-- As part of the migration operation, the 2nd slot on x86 platforms is
-  mounted to /tmp/slotx_yyyy. If the script terminates abnormally, this would
-  leave the mount active and prevents cl-img-install from completing this install,
-  with this error:
-    'Logical volume "SYSROOTx" already exists in volume group "CUMULUS"'
-    'Failure: Problems creating/formatting partition SYSROOT'.
-   To clear this condition, do:  sudo umount /tmp/slot{x}_{yyyy} 
+- As part of the migration operation, the alternate slot on x86 platforms is
+  mounted to /tmp/slotX_YYYY. If the script terminates abnormally, this would
+  leave the mount active and prevent cl-img-install from completing this install,
+  in which case this error will be seen during the install:
+  <pre>
+    Logical volume "SYSROOTx" already exists in volume group "CUMULUS"
+    Failure: Problems creating/formatting partition SYSROOT
+  </pre>
+   To clear this condition, do:
+   <pre>sudo umount /tmp/slotX_YYYY</pre> 
 
 - Does not support certain old PowerPC platforms with Raw Flash implementations
     - Celestica/Penguin Arctica 4804i 1G (cel,kennisis)
@@ -103,7 +112,7 @@ no args - Default: Print output of changed config files to screen
     - Celestica/Penguin Arctica 3200XL 40G (cel,smallstone)
     - Delta/Agema DNI-3448P (dni,3448p)
 
-- Does not support 3.0 at this time.
+- Does not support finding or archiving changed config files in Cumulus Linux 3.0.
 
 - Files are identified by their modification time, so a 'touch' on a file
   is considered a changed file.
@@ -114,7 +123,19 @@ no args - Default: Print output of changed config files to screen
   and recovery plan if user doesn't use orchestration tools to provision
   and maintain configurations.
   
-- Third party packages and add-ons like cl-mgmtvrf are not installed in new slot,
+- Management Namespace is a deprecated feature as of 2.5.4, and is replaced
+  with the Management VRF feature in Cumulus Linux 2.5.5 and 3.0.  Management Namespace
+  files will NOT be automatically migrated when using this script, and any Namespace
+  config files will be removed by the clean up of /mnt/persist.  If it is desired to continue
+  using Mgmt Namespace in 2.5, the following procedure must be followed:
+    - Follow the procedure listed in the Usage section above, stopping before running 'sudo reload'
+    - Follow the upgrade procedure at the bottom of the Configuring a Management Namespace Knowledge
+    Base Article at this link: https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace.
+    Note: Be sure to Skip Step 7 'Install the Cumulus Linux image onto the switch', since that was done
+    in the first procedure
+    
+  
+- Third party packages and add-ons like cl-mgmtvrf are not installed in the new slot,
   although any package config files in /etc will be found and tagged to migrate.
   
 - On x86 platforms, the script can detect if config files have been deleted since
@@ -135,6 +156,13 @@ The playbook copies and executes the config_file_changes script with the --backu
 to create a backup archive, then retrieves that archive back to the ansible host as a
 starting place to plan a migration of config files to 3.0.
 
+Be aware that 2.5 configs are not guaranteed to work in 3.0.  Testing of the restore
+operation and proper operation of the Cumulus Linux 2.5 config in Cumulus Linux 3.0
+should be done on a non-production router or a Cumulus VX image, since every deployment
+is unique. The Caveats section below will be updated with known compatibility issues as
+they are discovered.
+  
+
 # Usage: Ansible Playbook CL_2.x_backup_archive.yml
 
 - Install ansible on a host.  This script was tested with ansible version 1.9.3
@@ -147,18 +175,23 @@ my_second_switch_name
 </code></pre>
 
 - Run playbook, specifying the ansible-hosts file and prompt for sudo passwd:
-<pre><code>
+<pre>
 ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
-</code></pre>
+</pre>
 
 - A tar archive of the config files on your 2.5 switches will be fetched to a directory
   tree rooted at:
-  <pre><code>
+<pre>
 ./config_archive/SWITCHNAME/tmp/config_archive_DATESTAMP.XXXX/
-</pre></code>
+</pre>
   
 - The log file 'config_file_changes.log.gz' will also be stored in that tree
-  
+
+- A backup can be restored to a newly imaged switch via:
+<pre>
+tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
+</pre>
+
 # Caveats for Migration between 2.5 and 3.0
 
 - The goal of this script is to identify and back up files that should be considered
@@ -167,8 +200,10 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
   be migrated, merged, or not moved to 3.0.  Note that the default configuration files
   may have been changed between versions, in which case only changes should be merged.
   
-- /etc/passwd and /etc/shadow should not be migrated to 3.0 directly.  Any locally created
-  users should be added to the 3.0 installation after upgrade.
+- /etc/passwd and /etc/shadow should not be migrated to 3.0 directly. The ansible script
+  explictly excludes these two files from the backup archive.  The default password for the
+  'cumulus' user will need to be changed, and any locally created users should be added to
+  the 3.0 installation after upgrade.
 
 - The /etc/apt/sources.list and /sources.list.d/ files are not compatible with 3.0 and will
   be excluded from the config archive when using the ansible playbook.  Manually edit these
