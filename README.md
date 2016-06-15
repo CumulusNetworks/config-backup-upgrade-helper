@@ -81,8 +81,8 @@ no args - Default: Print output of changed config files to screen
 -h, --help, Show this message
 ```
 
-
 # Caveats: Config File Migration Script
+
 - Currently this tool is not tested on ARM platforms.
 
 - On X86 platforms, this script does not clear out old files from alternate
