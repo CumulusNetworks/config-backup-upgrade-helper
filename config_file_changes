@@ -1003,9 +1003,9 @@ def check_if_mgmtvrf_or_netns():
             return
         
         log_n_print('')
-        log_n_print('WARNING: Management VRF is configured and will not be installed')
+        log_n_print('WARNING: Management VRF is configured and will NOT be installed')
         log_n_print('in the other slot!  You could lose eth0 connectivity on reboot.')
-        log_n_print('or have default unintended routing out eth0')
+        log_n_print('or have unintended default routing out eth0')
         log_n_print('You will need to arrange for out-of-band serial connectivity before rebooting')
         log_n_print('and re-install Mgmt-VRF after rebooting to the other slot')
         log_n_print('Please call Cumulus Support for assistance')
