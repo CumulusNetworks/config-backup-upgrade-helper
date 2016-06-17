@@ -52,7 +52,7 @@ scp /mnt/persist/backup/SWITCHNAME-config-archive-DATE_TIME.tar.gz  user@host:.
 </pre>
 Note:  A backup can be restored to a newly imaged switch via:
 <pre>
-tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
+sudo tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
 </pre>
 
 1. Make the other slot primary and reload the switch
