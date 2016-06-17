@@ -13,12 +13,13 @@ from sys import version_info
 
 
 #To do's
+# 23) Add check for Mgmt Namespaces and warning when cleaning /mnt/persist
+# 24) Add a /mnt/persist clean option to get un-pernicioused without a --sync
 # 5) Package into deb with slotsync - upgrade-tools
 # 12) implement and test arch=arm
 # 13) refactor debugging and print to use log facility
 # 18) Warning about rsyslog changes in 2.5.5 with pointer to release notes in general
 # 19) Feature:  Add --include to include additional directories
-# 20) Feature: Create a 'restore' tool/option to restore a backup archive to a switch. Run files through blacklist.
 # 21) Feature: Catch if onie-installer file is deleted on x86 and create error message
 # 22) Feature: Create option with logic using dpkg to determine 3rd party installed packages
 
@@ -38,6 +39,7 @@ from sys import version_info
 #X 14) Dont require sudo for '--help' option
 #X 15) Always log
 #X 17) Copy log file to /mnt/persist/backup at end
+#X 20) Documented 'restore' procedure in README.md to restore a backup archive to a switch. 
 
 
 class opt(object):
@@ -983,6 +985,32 @@ def check_if_mgmtvrf_or_netns():
     # Currently mgmtvrf or netns config could lock user out of box during upgrade.
     # need to check for it and decide how to error gracefully, or fix it
     # Here is shell code that needs to be convered to python and handling improved:
+    nsout=subprocess.check_output(['ip', 'netns','list'])
+    if re.search('mgmt', nsout):
+        #Mgmt namespace exists.. warning
+        log_n_print('')
+        log_n_print('WARNING: Namespaces are configured.  Namespace configs will not be migrated!')
+        log_n_print('This will result in lost eth0 connectivity!')
+        log_n_print('Check the README.md file for instructions on how to proceed')
+        log_n_print('')
+        return
+
+    if os.path.exists('/usr/sbin/cl-mgmtvrf'):
+        try:
+            mvrfout=subprocess.check_output(['cl-mgmtvrf', '-s'])
+        except subprocess.CalledProcessError as e:
+            #Mgmt VRF is not enabled
+            return
+        
+        log_n_print('')
+        log_n_print('WARNING: Management VRF is configured and will not be installed in the other slot')
+        log_n_print('You could lose eth0 connectivity on reboot or have default unintended routing out eth0.')
+        log_n_print('You will need to arrange for out-of-band serial connectivity before rebooting')
+        log_n_print('and re-install Mgmt-VRF after rebooting to the other slot')
+        log_n_print('Please call Cumulus Support for assistance')
+        log_n_print('')
+        return
+       
     '''
     if ip netns list | grep -q mgmt; then
       echo "Error: management namespace is enabled.  Unsupported configuration."
@@ -1231,6 +1259,7 @@ def main():
     if opt.backup and not opt.dryrun:
         create_backup_tar(added_file_dct, changed_file_dct)
 
+    check_if_mgmtvrf_or_netns()
 
     if opt.sync and not opt.dryrun:
         #run_slotsync_script()
