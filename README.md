@@ -190,7 +190,7 @@ ansible-playbook -i ./ansible.hosts -K CL_2.x_backup_archive.yml
 
 - A backup can be restored to a newly imaged switch via:
 <pre>
-tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
+sudo tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
 </pre>
 
 # Caveats for Migration between 2.5 and 3.0
