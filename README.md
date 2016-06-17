@@ -202,7 +202,7 @@ sudo tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
   may have been changed between versions, in which case only changes should be merged.
   
 - /etc/passwd and /etc/shadow should not be migrated to 3.0 directly. The ansible script
-  explictly excludes these two files from the backup archive.  The default password for the
+  explicitly excludes these two files from the backup archive.  The default password for the
   'cumulus' user will need to be changed, and any locally created users should be added to
   the 3.0 installation after upgrade.
 

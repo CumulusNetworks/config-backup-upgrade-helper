@@ -1012,17 +1012,6 @@ def check_if_mgmtvrf_or_netns():
         log_n_print('')
         return
        
-    '''
-    if ip netns list | grep -q mgmt; then
-      echo "Error: management namespace is enabled.  Unsupported configuration."
-      exit 2
-    fi
-    if test -e /usr/sbin/cl-mgmtvrf && cl-mgmtvrf -s &>/dev/null ; then
-      echo "Error: management VRF enabled.  Unsupported configuration."
-    exit 2
-    '''
-    pass
-
 
 def detect_fs_type(arch):
     # convert to python:
@@ -1067,17 +1056,18 @@ def usage():
     print "{0:<18}: {1}".format("-n, --dryrun", "Output to screen but don't create any files")
     print "{0:<18}: {1}".format("-s, --sync", "Copy changed and added files to alternate slot")
     print "{0:<18}: {1}".format("-f, --force", "Used with -s. Do not ask before copying files")
-    print "{0:<18}: {1}".format("-x, --exclude dirs", "Exclude a comma separated list of dirs: ")
+    print "{0:<18}: {1}".format("-x, --exclude [dirs]", "Exclude a comma separated list of dirs: ")
     print "{0:<18}  {1}".format(""," >  e.g.  -x /root,/home")
+    print "{0:<18}: {1}".format("-c, --clean", "Clean /mnt/persist of all but license and backup archives")    
     print "{0:<18}: {1}".format("-h, --help", "Show this message")
 
 
 def parse_opts():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbd:fnsx:",["help", "backup", "backup_dir=",
+        opts, args = getopt.getopt(sys.argv[1:],"hbd:fnsx:c",["help", "backup", "backup_dir=",
                                                 "force", "dryrun",
-                                                "sync", "exclude="])
+                                                "sync", "exclude=", "clean"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -1100,6 +1090,9 @@ def parse_opts():
             #log_n_print('Exclude arg is {}'.format(arg))
             opt.exclude_list=arg.split(',')
             #log_n_print('Exclude list is {0}'.format(exclude_list))
+        elif opt_arg in ("-c", "--clean"):
+            clean_mnt_persist()
+            sys.exit()
         else:
             print("Bug: Unhandled option")
             sys.exit(1)
