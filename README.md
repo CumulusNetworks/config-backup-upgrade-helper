@@ -72,13 +72,14 @@ sudo ./config_file_changes [-b] [-d backupdirname] [-n] [-s] [-f] [-x] [-h]
 Determine changed config files. Optionally create backup archive or sync to other slot
 
 no args - Default: Print output of changed config files to screen
--b, --backup, Create a backup archive of changed config files.
--d, --backup_dir [dir], Location to store backup archive. Default dir is /mnt/persist/backup
--n, --dryrun, Output to screen but don't create or remove any files
--s, --sync, Copy changed and added files to alternate slot
--f, --force, Used with -s. Do not ask before copying or removing files
--x, --exclude dirs, Exclude a comma separated list of dirs: e.g.  -x /root,/home
--h, --help, Show this message
+-b, --backup,            Create a backup archive of changed config files.
+-d, --backup_dir [dir],  Location to store backup archive. Default dir is /mnt/persist/backup
+-n, --dryrun,            Output to screen but don't create or remove any files
+-s, --sync,              Copy changed and added files to alternate slot
+-f, --force,             Used with -s. Do not ask before copying or removing files
+-x, --exclude dirs,      Exclude a comma separated list of dirs: e.g.  -x /root,/home
+-c, --clean,             Clean /mnt/persist of all but license and backup archives
+-h, --help,              Show this message
 ```
 
 # Caveats: Config File Migration Script
