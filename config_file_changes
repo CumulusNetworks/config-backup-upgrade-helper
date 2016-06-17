@@ -1091,6 +1091,7 @@ def parse_opts():
             opt.exclude_list=arg.split(',')
             #log_n_print('Exclude list is {0}'.format(exclude_list))
         elif opt_arg in ("-c", "--clean"):
+            opt.debug=False
             clean_mnt_persist()
             sys.exit()
         else:
