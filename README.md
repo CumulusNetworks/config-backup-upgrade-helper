@@ -128,8 +128,23 @@ sudo umount /tmp/slotX_YYYY
 - Management Namespace is a deprecated feature as of 2.5.4, and is replaced
   with the Management VRF feature in Cumulus Linux 2.5.5 and 3.0.  Management Namespace
   files will NOT be automatically migrated when using this script, and any Namespace
-  config files will be removed by the clean up of `/mnt/persist`.  If it is desired to continue
-  using Mgmt Namespace in 2.5, the following procedure must be followed:
+  config files will be removed by the clean up of `/mnt/persist`.  The resulting configuration
+  may result in loss of configuration and therefore connectivity on eth0 or front-panel port.
+  To remove the Mgmt Namespace feature (recommended), the following procedure must be followed before
+  attempting to migrate configs:
+  - Access your router via the console.
+  - Issue the following commands:
+  <pre>
+  sudo cl-ns-mgmt --undo
+  sudo reboot
+  </pre>
+  - Verify that the /etc/network/interfaces is correctly merged with eth0 and front-panel ports configuration
+  - Follow the procedure listed in the Usage section above to install the new image and migrate the
+  configs to the new slot.
+  
+  
+  
+- If it is desired to continue using Mgmt Namespace in 2.5, the following procedure must be followed:
     - Follow the procedure listed in the Usage section above, stopping before running 'sudo reload'
     - Follow the upgrade procedure at the bottom of the Configuring a Management Namespace Knowledge
     Base Article at this link: <https://support.cumulusnetworks.com/hc/en-us/articles/202325278-Configuring-a-Management-Namespace>.
@@ -211,9 +226,9 @@ sudo tar -C / -xvf SWITCHNAME-config-archive-DATE_TIME.tar.gz
   be excluded from the config archive when using the ansible playbook.  Manually edit these
   files and add any custom repos to the sources.list files after upgrading to 3.0
   
-- cl-mgmtvrf and Management namespaces in 2.5 are deprecated.  If you were using either of
-  those tools, you will need to configure your 3.0 router for the new Management-VRF feature
-  implementation as described in the 3.0 docs:
+- cl-mgmtvrf and Management namespaces in 2.5 are deprecated and removed in 3.0.  If you were
+  using either of those tools, you will need to disable/remove them and then configure your
+  3.0 router for the new Management-VRF feature implementation as described in the 3.0 docs:
   https://docs.cumulusnetworks.com/display/DOCS/Management+VRF
   
 
