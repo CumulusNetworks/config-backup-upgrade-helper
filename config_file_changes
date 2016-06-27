@@ -13,8 +13,6 @@ from sys import version_info
 
 
 #To do's
-# 23) Add check for Mgmt Namespaces and warning when cleaning /mnt/persist
-# 24) Add a /mnt/persist clean option to get un-pernicioused without a --sync
 # 5) Package into deb with slotsync - upgrade-tools
 # 12) implement and test arch=arm
 # 13) refactor debugging and print to use log facility
@@ -40,6 +38,8 @@ from sys import version_info
 #X 15) Always log
 #X 17) Copy log file to /mnt/persist/backup at end
 #X 20) Documented 'restore' procedure in README.md to restore a backup archive to a switch. 
+#X 23) Add check for Mgmt Namespaces and warning when cleaning /mnt/persist
+#X 24) Add a /mnt/persist clean option to get un-pernicioused without a --sync
 
 
 class opt(object):
